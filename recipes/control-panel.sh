@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Recipe metadata is consumed by lib/applications.sh after sourcing.
+# shellcheck disable=SC2034
+
+AERO7_APP_ID="control-panel"
+AERO7_APP_NAME="Linux Control Panel"
+AERO7_APP_AUTHOR="ActuallyAridan"
+AERO7_APP_SOURCE_URL="https://github.com/actuallyaridan/linux-control.git"
+AERO7_APP_REF="main"
+AERO7_APP_LICENSE="GPL-3.0"
+AERO7_APP_DEPENDENCIES="qt6-base cmake ninja"
+AERO7_APP_OPTIONAL_DEPENDENCIES=""
+AERO7_APP_SUPPORTED_SESSION="wayland"
+AERO7_APP_BUILD_SYSTEM="cmake"
+AERO7_APP_SOURCE_SUBDIR="."
+AERO7_APP_INSTALL_KIND="git-cmake"
+AERO7_APP_AUR_PACKAGE=""
+AERO7_APP_VALIDATE_COMMAND="test -f /usr/share/applications/linux-controlpanel.desktop || command -v linux-control >/dev/null 2>&1"
+AERO7_APP_FATAL="no"
+AERO7_APP_EXPERIMENTAL="yes"
+AERO7_APP_AVAILABLE="no"
+AERO7_APP_REASON="VM validation found the current build expects an in-tree libAeroQt artifact; disabled until build instructions are verified."
+AERO7_APP_BRANCH="main"
+AERO7_APP_BUILD_COMMAND="disabled: current build expects in-tree libAeroQt artifact"
+AERO7_APP_INSTALL_COMMAND="disabled: current build expects in-tree libAeroQt artifact"
+AERO7_APP_UNINSTALL_METADATA="desktop entry linux-controlpanel.desktop; install manifest pending VM validation"
+AERO7_APP_PLASMA6_COMPAT="yes"
+AERO7_APP_WAYLAND_COMPAT="yes"

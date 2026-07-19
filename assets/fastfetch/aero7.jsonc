@@ -1,0 +1,44 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "small",
+    "source": [
+      "   ___                    _____ ",
+      "  / _ | ___  _______     / ___/ ",
+      " / __ |/ -_)/ __/ _ \\   / _ \\   ",
+      "/_/ |_|\\__//_/  \\___/   \\___/   ",
+      "Aero7-shell on Arch Linux"
+    ]
+  },
+  "display": {
+    "separator": "  "
+  },
+  "modules": [
+    {
+      "type": "title",
+      "key": "Windows 7 Ultimate style"
+    },
+    {
+      "type": "custom",
+      "key": "Aero7-shell",
+      "format": "Windows 7 desktop experience on Arch Linux"
+    },
+    "os",
+    "de",
+    "wm",
+    "kernel",
+    "host",
+    "cpu",
+    "gpu",
+    "memory",
+    "display",
+    "packages",
+    "shell",
+    "terminal",
+    {
+      "type": "custom",
+      "key": "Notice",
+      "format": "Aero7-shell is independent. Windows is a trademark of the Microsoft group of companies."
+    }
+  ]
+}

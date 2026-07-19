@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+flush_dns() {
+  if command -v resolvectl >/dev/null 2>&1; then
+    if [[ "$(id -u)" -eq 0 ]]; then
+      resolvectl flush-caches
+    else
+      sudo resolvectl flush-caches
+    fi
+    printf 'DNS resolver cache flushed through resolvectl.\n'
+  else
+    printf 'No supported resolver cache flush command was found.\n' >&2
+    exit 1
+  fi
+}
+
+show_config() {
+  local all="$1"
+  printf 'Aero7 compatibility command: ipconfig for Arch Linux\n\n'
+  ip -o addr show | awk '
+    {
+      iface=$2
+      family=$3
+      addr=$4
+      gsub(/:/, "", iface)
+      if (family == "inet" || family == "inet6") {
+        printf "%s adapter %s:\n   %s Address. . . . . . . . . . : %s\n\n", family, iface, family, addr
+      }
+    }
+  '
+  printf 'Default Gateway . . . . . . . . : '
+  ip route show default 2>/dev/null | awk 'NR == 1 { print $3 }'
+  if [[ "$all" == "yes" ]]; then
+    if command -v resolvectl >/dev/null 2>&1; then
+      printf '\nDNS configuration:\n'
+      resolvectl dns 2>/dev/null || true
+    elif [[ -r /etc/resolv.conf ]]; then
+      printf '\nDNS configuration:\n'
+      awk '/^nameserver/ { print "   DNS Server . . . . . . . . . : " $2 }' /etc/resolv.conf
+    fi
+  fi
+}
+
+case "${1:-}" in
+  /all) show_config yes ;;
+  /flushdns) flush_dns ;;
+  "") show_config no ;;
+  *)
+    printf 'Usage: ipconfig [/all|/flushdns]\n' >&2
+    exit 2
+    ;;
+esac
+

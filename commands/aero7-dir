@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+target="${1:-.}"
+if [[ ! -d "$target" ]]; then
+  printf 'aero7-dir: not a directory: %s\n' "$target" >&2
+  exit 1
+fi
+
+printf ' Aero7 compatibility command: directory listing for Arch Linux\n\n'
+printf ' Directory of %s\n\n' "$(cd -- "$target" && pwd -P)"
+
+find "$target" -maxdepth 1 -mindepth 1 -print0 |
+  sort -z |
+  while IFS= read -r -d '' entry; do
+    name="$(basename -- "$entry")"
+    if [[ -d "$entry" ]]; then
+      printf '%-20s <DIR>          %s\n' "$(stat -c '%Y' "$entry" | xargs -I{} date -d @{} '+%Y-%m-%d %H:%M')" "$name"
+    else
+      size="$(stat -c '%s' "$entry")"
+      printf '%-20s %12s %s\n' "$(stat -c '%Y' "$entry" | xargs -I{} date -d @{} '+%Y-%m-%d %H:%M')" "$size" "$name"
+    fi
+  done
+

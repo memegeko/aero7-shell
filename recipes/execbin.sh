@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Recipe metadata is consumed by lib/applications.sh after sourcing.
+# shellcheck disable=SC2034
+
+AERO7_APP_ID="execbin"
+AERO7_APP_NAME="execbin run dialog"
+AERO7_APP_AUTHOR="catpswin56"
+AERO7_APP_SOURCE_URL="unverified"
+AERO7_APP_REF="unverified"
+AERO7_APP_LICENSE="unknown"
+AERO7_APP_DEPENDENCIES="unverified"
+AERO7_APP_OPTIONAL_DEPENDENCIES=""
+AERO7_APP_SUPPORTED_SESSION="wayland"
+AERO7_APP_BUILD_SYSTEM="unknown"
+AERO7_APP_SOURCE_SUBDIR="."
+AERO7_APP_INSTALL_KIND="unavailable"
+AERO7_APP_AUR_PACKAGE=""
+AERO7_APP_VALIDATE_COMMAND="disabled"
+AERO7_APP_FATAL="no"
+AERO7_APP_EXPERIMENTAL="yes"
+AERO7_APP_AVAILABLE="no"
+AERO7_APP_REASON="No authoritative upstream repository was verified."
+AERO7_APP_BRANCH="unverified"
+AERO7_APP_BUILD_COMMAND="disabled"
+AERO7_APP_INSTALL_COMMAND="disabled"
+AERO7_APP_UNINSTALL_METADATA="none; recipe disabled"
+AERO7_APP_PLASMA6_COMPAT="unverified"
+AERO7_APP_WAYLAND_COMPAT="unverified"

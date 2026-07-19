@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Recipe metadata is consumed by lib/applications.sh after sourcing.
+# shellcheck disable=SC2034
+
+AERO7_APP_ID="tuxmanager"
+AERO7_APP_NAME="TuxManager"
+AERO7_APP_AUTHOR="benapetr"
+AERO7_APP_SOURCE_URL="https://github.com/benapetr/TuxManager"
+AERO7_APP_REF="AUR package version"
+AERO7_APP_LICENSE="GPL-3.0-or-later"
+AERO7_APP_DEPENDENCIES="tuxmanager"
+AERO7_APP_OPTIONAL_DEPENDENCIES=""
+AERO7_APP_SUPPORTED_SESSION="wayland"
+AERO7_APP_BUILD_SYSTEM="aur"
+AERO7_APP_SOURCE_SUBDIR="."
+AERO7_APP_INSTALL_KIND="aur"
+AERO7_APP_AUR_PACKAGE="tuxmanager"
+AERO7_APP_VALIDATE_COMMAND="command -v tux-manager >/dev/null 2>&1 || command -v tuxmanager >/dev/null 2>&1 || test -f /usr/share/applications/tuxmanager.desktop || test -f /usr/share/applications/tux-manager.desktop"
+AERO7_APP_FATAL="no"
+AERO7_APP_EXPERIMENTAL="no"
+AERO7_APP_AVAILABLE="yes"
+AERO7_APP_REASON="AUR package and upstream GitHub repository verified."
+AERO7_APP_BRANCH="AUR package version"
+AERO7_APP_BUILD_COMMAND="yay -S --needed tuxmanager"
+AERO7_APP_INSTALL_COMMAND="yay -S --needed tuxmanager"
+AERO7_APP_UNINSTALL_METADATA="pacman package tuxmanager"
+AERO7_APP_PLASMA6_COMPAT="yes"
+AERO7_APP_WAYLAND_COMPAT="yes"

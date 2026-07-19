@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+os_name="Arch Linux"
+if [[ -r /etc/os-release ]]; then
+  os_name="$(awk -F= '$1 == "PRETTY_NAME" { gsub(/"/, "", $2); print $2 }' /etc/os-release)"
+fi
+
+printf 'Aero7 compatibility command: systeminfo for Arch Linux\n\n'
+printf 'Host Name:                 %s\n' "$(uname -n 2>/dev/null || cat /proc/sys/kernel/hostname 2>/dev/null || printf 'unknown')"
+printf 'OS Name:                   %s\n' "$os_name"
+printf 'OS Configuration:          Aero7-shell Windows 7 Ultimate-inspired desktop\n'
+printf 'OS Build Type:             Linux kernel\n'
+printf 'System Type:               %s\n' "$(uname -m)"
+printf 'Kernel Version:            %s\n' "$(uname -r)"
+printf 'Boot Time:                 %s\n' "$(uptime -s 2>/dev/null || printf 'unknown')"
+printf 'System Manufacturer:       %s\n' "$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || printf 'unknown')"
+printf 'System Model:              %s\n' "$(cat /sys/class/dmi/id/product_name 2>/dev/null || printf 'unknown')"
+printf 'Processor(s):              %s\n' "$(lscpu 2>/dev/null | awk -F: '/Model name/ { sub(/^[ \t]+/, "", $2); print $2; exit }')"
+printf 'Total Physical Memory:     %s\n' "$(free -h | awk '/^Mem:/ { print $2 }')"
+printf 'Available Physical Memory: %s\n' "$(free -h | awk '/^Mem:/ { print $7 }')"
+if command -v systemctl >/dev/null 2>&1; then
+  printf 'System Boot State:         %s\n' "$(systemctl is-system-running 2>/dev/null || true)"
+fi

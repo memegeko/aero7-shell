@@ -1,0 +1,337 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+AERO7_DEBUG="${AERO7_DEBUG:-0}"
+AERO7_NO_COLOR="${AERO7_NO_COLOR:-0}"
+AERO7_PLAIN="${AERO7_PLAIN:-0}"
+AERO7_QUIET="${AERO7_QUIET:-0}"
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --no-color)
+      AERO7_NO_COLOR=1
+      ;;
+    --plain)
+      AERO7_PLAIN=1
+      ;;
+    --quiet)
+      AERO7_QUIET=1
+      ;;
+    --debug)
+      AERO7_DEBUG=1
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      break
+      ;;
+  esac
+  shift
+done
+export AERO7_DEBUG AERO7_NO_COLOR AERO7_PLAIN AERO7_QUIET
+
+if [[ "$AERO7_DEBUG" == "1" ]]; then
+  export PS4='+ ${BASH_SOURCE##*/}:${LINENO}:${FUNCNAME[0]:-main}:cmd=${AERO7_COMMAND_NAME:-startup}: '
+  set -x
+fi
+
+resolve_root() {
+  if [[ -n "${AERO7_PROJECT_ROOT:-}" && -d "$AERO7_PROJECT_ROOT/lib" ]]; then
+    printf '%s\n' "$AERO7_PROJECT_ROOT"
+    return 0
+  fi
+  if [[ -d /usr/local/lib/aero7-shell/lib ]]; then
+    printf '%s\n' /usr/local/lib/aero7-shell
+    return 0
+  fi
+  local script_dir
+  script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+  if [[ -d "$script_dir/../lib" ]]; then
+    cd -- "$script_dir/.." && pwd -P
+    return 0
+  fi
+  return 1
+}
+
+AERO7_PROJECT_ROOT="$(resolve_root)" || {
+  printf 'aero7: could not locate Aero7-shell runtime files.\n' >&2
+  exit 1
+}
+export AERO7_PROJECT_ROOT
+
+source "$AERO7_PROJECT_ROOT/lib/common.sh"
+source "$AERO7_PROJECT_ROOT/lib/logging.sh"
+source "$AERO7_PROJECT_ROOT/lib/ui.sh"
+source "$AERO7_PROJECT_ROOT/lib/prompts.sh"
+source "$AERO7_PROJECT_ROOT/lib/state.sh"
+source "$AERO7_PROJECT_ROOT/lib/backup.sh"
+source "$AERO7_PROJECT_ROOT/lib/packages.sh"
+source "$AERO7_PROJECT_ROOT/lib/aur.sh"
+source "$AERO7_PROJECT_ROOT/lib/systemd.sh"
+source "$AERO7_PROJECT_ROOT/lib/bootloader.sh"
+source "$AERO7_PROJECT_ROOT/lib/initramfs.sh"
+source "$AERO7_PROJECT_ROOT/lib/plasma.sh"
+source "$AERO7_PROJECT_ROOT/lib/assets.sh"
+source "$AERO7_PROJECT_ROOT/lib/applications.sh"
+source "$AERO7_PROJECT_ROOT/lib/validation.sh"
+source "$AERO7_PROJECT_ROOT/lib/ownership.sh"
+
+aero7_init_paths
+command="${1:-}"
+if [[ "$command" == "logs" ]]; then
+  AERO7_LOG_DIR="${AERO7_LOG_DIR:-$AERO7_HOME/.local/state/aero7-shell/logs}"
+  export AERO7_LOG_DIR
+else
+  aero7_logging_init aero7
+fi
+
+usage() {
+  cat <<'EOF'
+Usage: aero7 [--plain|--no-color|--quiet|--debug] <command> [args]
+
+Commands:
+  status
+  doctor
+  update
+  repair
+  restore [--latest|--backup <id>]
+  uninstall [options]
+  backups
+  logs
+  version
+  apps [status|install <name>|remove <name>]
+  layout [apply|restore]
+  plymouth [status|repair]
+  fastfetch [--install-default|--restore]
+  wine [enable|disable|status]
+
+Logs:
+  aero7 logs
+  aero7 logs --latest
+  aero7 logs --follow
+EOF
+}
+
+aero7_cmd_kv() {
+  local label="$1"
+  local value="$2"
+  printf '  %-14s %s\n' "$label" "$value"
+}
+
+aero7_status_cmd() {
+  local state backup failed completed warnings
+  state="$(aero7_state_get current_stage 2>/dev/null || printf 'not installed')"
+  backup="$(aero7_state_get backup_id 2>/dev/null || printf 'none')"
+  failed="$(aero7_state_get failed_stage 2>/dev/null || true)"
+  completed="$(aero7_state_completed_list | wc -l | tr -d ' ')"
+  warnings="$(aero7_state_count_unique warnings 2>/dev/null || printf '0')"
+
+  if [[ -n "${AERO7_UI_LOADED:-}" ]] && ! aero7_ui_quiet; then
+    aero7_ui_box "Aero7-shell Status" "Plasma Wayland target"
+  else
+    printf 'Aero7-shell Status\n'
+  fi
+  aero7_cmd_kv "Version" "$AERO7_VERSION"
+  aero7_cmd_kv "State" "$state"
+  aero7_cmd_kv "Backup" "$backup"
+  aero7_cmd_kv "Completed" "$completed stage(s)"
+  aero7_cmd_kv "Warnings" "$warnings"
+  if [[ -n "$failed" ]]; then
+    aero7_cmd_kv "Failed" "$failed"
+  else
+    aero7_cmd_kv "Failed" "none"
+  fi
+  aero7_cmd_kv "Log" "${AERO7_LOG_FILE:-none}"
+}
+
+aero7_latest_log() {
+  [[ -d "$AERO7_LOG_DIR" ]] || return 1
+  find "$AERO7_LOG_DIR" -maxdepth 1 -type f -name '*.log' -printf '%T@ %p\n' \
+    | sort -n \
+    | awk 'END { sub(/^[^ ]+ /, ""); if (length($0) > 0) print }'
+}
+
+aero7_logs_cmd() {
+  local mode="${1:-list}"
+  local latest
+
+  case "$mode" in
+    list)
+      [[ -d "$AERO7_LOG_DIR" ]] || return 0
+      if [[ -n "${AERO7_UI_LOADED:-}" ]] && ! aero7_ui_quiet; then
+        aero7_ui_box "Aero7-shell Logs" ""
+      fi
+      find "$AERO7_LOG_DIR" -maxdepth 1 -type f -name '*.log' -printf '%TY-%Tm-%Td %TH:%TM %p\n' | sort
+      ;;
+    --latest)
+      latest="$(aero7_latest_log || true)"
+      [[ -n "$latest" ]] || aero7_die "No Aero7-shell logs found."
+      printf '%s\n' "$latest"
+      ;;
+    --follow|-f)
+      latest="$(aero7_latest_log || true)"
+      [[ -n "$latest" ]] || aero7_die "No Aero7-shell logs found."
+      tail -n 80 -F "$latest"
+      ;;
+    *)
+      aero7_die "Usage: aero7 logs [--latest|--follow]"
+      ;;
+  esac
+}
+
+aero7_restore_cmd() {
+  local backup=""
+  case "${1:-}" in
+    --latest|"")
+      backup="$(aero7_latest_backup || true)"
+      ;;
+    --backup)
+      shift
+      backup="${1:-}"
+      ;;
+    *)
+      aero7_die "Unknown restore option: $1"
+      ;;
+  esac
+  [[ -n "$backup" ]] || aero7_die "No backup selected."
+  aero7_restore_backup "$backup"
+}
+
+aero7_apps_cmd() {
+  local sub="${1:-status}"
+  case "$sub" in
+    status)
+      aero7_apps_status
+      ;;
+    install)
+      shift
+      local wanted="${1:-}"
+      [[ -n "$wanted" ]] || aero7_die "Usage: aero7 apps install <name>"
+      local recipe
+      for recipe in $(aero7_recipe_list); do
+        aero7_recipe_load "$recipe"
+        if [[ "$AERO7_APP_ID" == "$wanted" ]]; then
+          aero7_app_install_current_recipe
+          return 0
+        fi
+      done
+      aero7_die "Unknown application recipe: $wanted"
+      ;;
+    remove)
+      aero7_warn "Per-application removal is not enabled until install manifests are populated."
+      ;;
+    *)
+      aero7_die "Unknown apps command: $sub"
+      ;;
+  esac
+}
+
+aero7_wine_cmd() {
+  local sub="${1:-status}"
+  case "$sub" in
+    status)
+      if aero7_have wine; then
+        wine --version
+      else
+        printf 'Wine is not installed by Aero7-shell.\n'
+      fi
+      ;;
+    enable)
+      aero7_pacman_install_needed wine wine-mono wine-gecko xdg-utils shared-mime-info desktop-file-utils
+      aero7_state_set "wine_integration" "enabled"
+      printf 'Wine integration enabled. Downloaded Windows executables will not be run automatically.\n'
+      ;;
+    disable)
+      aero7_state_set "wine_integration" "disabled"
+      printf 'Wine integration disabled in Aero7-shell state. User MIME customizations are preserved.\n'
+      ;;
+    *)
+      aero7_die "Unknown wine command: $sub"
+      ;;
+  esac
+}
+
+aero7_fastfetch_cmd() {
+  case "${1:-}" in
+    --install-default)
+      local dir="$AERO7_HOME/.config/fastfetch"
+      aero7_user_run install -d -m 0755 "$dir"
+      aero7_user_run install -m 0644 "$AERO7_PROJECT_ROOT/assets/fastfetch/aero7.jsonc" "$dir/aero7.jsonc"
+      if [[ ! -e "$dir/config.jsonc" ]]; then
+        aero7_user_run ln -s "aero7.jsonc" "$dir/config.jsonc"
+      else
+        aero7_warn "Existing default Fastfetch config preserved."
+      fi
+      ;;
+    --restore)
+      aero7_warn "Fastfetch restore is handled by aero7 restore from a backup."
+      ;;
+    *)
+      if aero7_have fastfetch; then
+        fastfetch --config "$AERO7_HOME/.config/fastfetch/aero7.jsonc"
+      else
+        aero7_die "fastfetch is not installed."
+      fi
+      ;;
+  esac
+}
+
+if [[ -z "$command" ]]; then
+  usage
+  exit 0
+fi
+shift || true
+AERO7_COMMAND_NAME="$command"
+export AERO7_COMMAND_NAME
+
+case "$command" in
+  status) aero7_status_cmd ;;
+  doctor) aero7_doctor ;;
+  update) exec "$AERO7_PROJECT_ROOT/update.sh" "$@" ;;
+  repair)
+    case "${1:-}" in
+      ownership) aero7_repair_root_owned_managed_user_files ;;
+      "") aero7_doctor || aero7_warn "Repair currently limits itself to reporting failed managed components. Use 'aero7 repair ownership' for managed user file ownership." ;;
+      *) aero7_die "Usage: aero7 repair [ownership]" ;;
+    esac
+    ;;
+  restore) aero7_restore_cmd "$@" ;;
+  uninstall) exec "$AERO7_PROJECT_ROOT/uninstall.sh" "$@" ;;
+  backups) aero7_list_backups ;;
+  logs) aero7_logs_cmd "$@" ;;
+  version) printf '%s\n' "$AERO7_VERSION" ;;
+  apps) aero7_apps_cmd "$@" ;;
+  layout)
+    case "${1:-}" in
+      apply) aero7_apply_plasma_layout ;;
+      restore) aero7_restore_cmd --latest ;;
+      *) aero7_die "Usage: aero7 layout [apply|restore]" ;;
+    esac
+    ;;
+  plymouth)
+    case "${1:-status}" in
+      status)
+        if [[ -n "${AERO7_UI_LOADED:-}" ]] && ! aero7_ui_quiet; then
+          aero7_ui_box "Aero7-shell Plymouth" ""
+        else
+          printf 'Aero7-shell Plymouth\n'
+        fi
+        aero7_cmd_kv "Bootloader" "$(aero7_detect_bootloader)"
+        aero7_cmd_kv "Initramfs" "$(aero7_detect_initramfs)"
+        aero7_cmd_kv "Theme" "$(aero7_state_get plymouth_theme 2>/dev/null || printf 'unknown')"
+        aero7_cmd_kv "Reboot" "$(aero7_state_get reboot_recommended 2>/dev/null || printf 'unknown')"
+        ;;
+      repair)
+        aero7_configure_initramfs_for_plymouth
+        aero7_configure_bootloader_for_plymouth
+        ;;
+      *) aero7_die "Usage: aero7 plymouth [status|repair]" ;;
+    esac
+    ;;
+  fastfetch) aero7_fastfetch_cmd "$@" ;;
+  wine) aero7_wine_cmd "$@" ;;
+  --help|-h|help) usage ;;
+  *) aero7_die "Unknown command: $command" ;;
+esac

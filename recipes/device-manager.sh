@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Recipe metadata is consumed by lib/applications.sh after sourcing.
+# shellcheck disable=SC2034
+
+AERO7_APP_ID="device-manager"
+AERO7_APP_NAME="Linux Device Manager"
+AERO7_APP_AUTHOR="ActuallyAridan"
+AERO7_APP_SOURCE_URL="https://github.com/actuallyaridan/linux-devmgmt"
+AERO7_APP_REF="AUR package version"
+AERO7_APP_LICENSE="MIT"
+AERO7_APP_DEPENDENCIES="linux-devmgmt"
+AERO7_APP_OPTIONAL_DEPENDENCIES=""
+AERO7_APP_SUPPORTED_SESSION="wayland"
+AERO7_APP_BUILD_SYSTEM="aur"
+AERO7_APP_SOURCE_SUBDIR="."
+AERO7_APP_INSTALL_KIND="aur"
+AERO7_APP_AUR_PACKAGE="linux-devmgmt"
+AERO7_APP_VALIDATE_COMMAND="test -f /usr/share/applications/linux-devmgmt.desktop || command -v linux-devmgmt >/dev/null 2>&1"
+AERO7_APP_FATAL="no"
+AERO7_APP_EXPERIMENTAL="no"
+AERO7_APP_AVAILABLE="yes"
+AERO7_APP_REASON="AUR package and upstream GitHub repository verified."
+AERO7_APP_BRANCH="AUR package version"
+AERO7_APP_BUILD_COMMAND="yay -S --needed linux-devmgmt"
+AERO7_APP_INSTALL_COMMAND="yay -S --needed linux-devmgmt"
+AERO7_APP_UNINSTALL_METADATA="pacman package linux-devmgmt"
+AERO7_APP_PLASMA6_COMPAT="yes"
+AERO7_APP_WAYLAND_COMPAT="yes"

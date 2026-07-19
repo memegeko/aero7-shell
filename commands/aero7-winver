@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+message=$'Aero7-shell\nWindows 7 Ultimate-inspired desktop\nRunning on Arch Linux\n\nAero7-shell is an independent project and is not affiliated with or endorsed by Microsoft Corporation.\nWindows is a trademark of the Microsoft group of companies.'
+
+if command -v linver >/dev/null 2>&1; then
+  exec linver
+elif command -v kdialog >/dev/null 2>&1; then
+  exec kdialog --title "Aero7-shell" --msgbox "$message"
+elif command -v zenity >/dev/null 2>&1; then
+  exec zenity --info --title "Aero7-shell" --text "$message"
+else
+  printf '%s\n' "$message"
+fi

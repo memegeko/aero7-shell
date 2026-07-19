@@ -1,0 +1,21 @@
+name: syntax
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  bash-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: |
+          find . -type f \( -name '*.sh' -o -path './commands/*' -o -name 'install.sh' -o -name 'bootstrap.sh' -o -name 'update.sh' -o -name 'uninstall.sh' \) -print0 |
+            xargs -0 -n1 bash -n
+      - name: Tests
+        run: |
+          bash tests/test-common.sh
+          bash tests/test-detection.sh
+          bash tests/test-recipes.sh
+          bash tests/test-policy.sh

@@ -1,0 +1,14 @@
+# Local or unapproved visual asset experiments.
+assets/wallpapers/*.jpg
+assets/wallpapers/*.jpeg
+assets/wallpapers/*.png
+assets/wallpapers/*.bmp
+assets/wallpapers/*.svg
+assets/avatars/*.bmp
+
+# Generated and runtime files.
+.aero7-test-root/
+*.log
+test-results/
+passwd
+.dont include everthing in this flder in the git/
