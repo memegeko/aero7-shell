@@ -1,9 +1,9 @@
 # Local or unapproved visual asset experiments.
-assets/wallpapers/*.jpg
-assets/wallpapers/*.jpeg
-assets/wallpapers/*.png
-assets/wallpapers/*.bmp
-assets/wallpapers/*.svg
+assets/wallpapers/*
+!assets/wallpapers/README.md
+!assets/wallpapers/aero_bg_1.png
+!assets/wallpapers/aero_bg_2.jpeg
+!assets/wallpapers/aero_bg_3.jpg
 assets/avatars/*.bmp
 
 # Generated and runtime files.

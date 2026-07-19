@@ -10,7 +10,7 @@ aero7_wallpaper_is_allowed() {
   local base
   base="$(basename -- "$file")"
   case "$base" in
-    README.md) return 1 ;;
+    aero_bg_1.png|aero_bg_2.jpeg|aero_bg_3.jpg) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -28,6 +28,26 @@ aero7_avatar_is_allowed() {
 }
 
 aero7_preferred_wallpaper_source() {
+  local configured="${AERO7_WALLPAPER:-}"
+  local candidate
+  if [[ -n "$configured" ]]; then
+    candidate="$AERO7_ROOT/assets/wallpapers/$configured"
+    [[ -f "$candidate" ]] && aero7_wallpaper_is_allowed "$candidate" && {
+      printf '%s\n' "$candidate"
+      return 0
+    }
+    aero7_warn "Configured wallpaper is not approved or missing: $configured"
+  fi
+
+  for candidate in \
+    "$AERO7_ROOT/assets/wallpapers/aero_bg_1.png" \
+    "$AERO7_ROOT/assets/wallpapers/aero_bg_2.jpeg" \
+    "$AERO7_ROOT/assets/wallpapers/aero_bg_3.jpg"; do
+    [[ -f "$candidate" ]] || continue
+    aero7_wallpaper_is_allowed "$candidate" || continue
+    printf '%s\n' "$candidate"
+    return 0
+  done
   aero7_debug "No approved wallpaper is currently distributed."
   return 1
 }

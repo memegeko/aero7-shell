@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-AERO7_REPOSITORY="${AERO7_REPOSITORY:-memegeko/Aero7-shell}"
-AERO7_VERSION="${AERO7_VERSION:-v0.1.0}"
-AERO7_BRANCH="${AERO7_BRANCH:-}"
+AERO7_REPOSITORY="${AERO7_REPOSITORY:-memegeko/aero_desktop}"
+AERO7_REF="${AERO7_REF:-${AERO7_BRANCH:-main}}"
+AERO7_VERSION="${AERO7_VERSION:-}"
+AERO7_REQUIRE_CHECKSUM="${AERO7_REQUIRE_CHECKSUM:-0}"
+AERO7_BOOTSTRAP_PRINT_URLS="${AERO7_BOOTSTRAP_PRINT_URLS:-0}"
 AERO7_DEBUG="${AERO7_DEBUG:-0}"
 
 if [[ "$AERO7_DEBUG" == "1" ]]; then
@@ -46,10 +48,32 @@ bootstrap_verify_checksum() {
   printf '%s  %s\n' "$expected" "$archive" | sha256sum -c -
 }
 
+checksum_required="$AERO7_REQUIRE_CHECKSUM"
+if [[ -n "$AERO7_VERSION" ]]; then
+  archive_name="aero7-shell-${AERO7_VERSION}.tar.gz"
+  archive_url="https://github.com/${AERO7_REPOSITORY}/releases/download/${AERO7_VERSION}/${archive_name}"
+  checksum_url="https://github.com/${AERO7_REPOSITORY}/releases/download/${AERO7_VERSION}/checksums.txt"
+  checksum_required=1
+else
+  archive_name="aero7-shell-${AERO7_REF//\//-}.tar.gz"
+  archive_url="https://codeload.github.com/${AERO7_REPOSITORY}/tar.gz/refs/heads/${AERO7_REF}"
+  checksum_url="https://raw.githubusercontent.com/${AERO7_REPOSITORY}/${AERO7_REF}/checksums.txt"
+fi
+
+if [[ "$AERO7_BOOTSTRAP_PRINT_URLS" == "1" ]]; then
+  printf 'repository=%s\n' "$AERO7_REPOSITORY"
+  printf 'ref=%s\n' "$AERO7_REF"
+  printf 'version=%s\n' "${AERO7_VERSION:-}"
+  printf 'archive_url=%s\n' "$archive_url"
+  printf 'checksum_required=%s\n' "$checksum_required"
+  printf 'checksum_url=%s\n' "$checksum_url"
+  exit 0
+fi
+
 [[ "$(id -u)" -ne 0 ]] || bootstrap_die "Do not run the bootstrapper as root."
 bootstrap_is_arch || bootstrap_die "This system does not appear to be Arch Linux."
 
-for tool in curl tar sha256sum mktemp awk; do
+for tool in curl tar mktemp awk; do
   bootstrap_have "$tool" || bootstrap_die "Required tool missing: $tool"
 done
 
@@ -68,21 +92,17 @@ trap cleanup EXIT
 
 archive="$tmp_dir/aero7-shell.tar.gz"
 checksums="$tmp_dir/checksums.txt"
-
-if [[ -n "$AERO7_BRANCH" ]]; then
-  archive_url="https://github.com/${AERO7_REPOSITORY}/archive/refs/heads/${AERO7_BRANCH}.tar.gz"
-  checksum_url="https://raw.githubusercontent.com/${AERO7_REPOSITORY}/${AERO7_BRANCH}/checksums.txt"
-else
-  archive_name="aero7-shell-${AERO7_VERSION}.tar.gz"
-  archive="$tmp_dir/$archive_name"
-  archive_url="https://github.com/${AERO7_REPOSITORY}/releases/download/${AERO7_VERSION}/${archive_name}"
-  checksum_url="https://github.com/${AERO7_REPOSITORY}/releases/download/${AERO7_VERSION}/checksums.txt"
-fi
+archive="$tmp_dir/$archive_name"
 
 printf 'Downloading %s...\n' "$archive_url"
 bootstrap_fetch "$archive_url" "$archive" || bootstrap_die "Failed to download release archive."
-bootstrap_fetch "$checksum_url" "$checksums" || bootstrap_die "Failed to download checksum file."
-bootstrap_verify_checksum "$archive" "$checksums" || bootstrap_die "Archive checksum verification failed."
+if [[ "$checksum_required" == "1" ]]; then
+  bootstrap_have sha256sum || bootstrap_die "Required tool missing: sha256sum"
+  bootstrap_fetch "$checksum_url" "$checksums" || bootstrap_die "Failed to download checksum file."
+  bootstrap_verify_checksum "$archive" "$checksums" || bootstrap_die "Archive checksum verification failed."
+else
+  printf 'Using development branch archive without checksum verification. Inspect bootstrap.sh first for production installs.\n' >&2
+fi
 
 tar -xzf "$archive" -C "$tmp_dir"
 install_script="$(find "$tmp_dir" -mindepth 2 -maxdepth 3 -type f -name install.sh | head -n 1)"

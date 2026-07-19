@@ -1,7 +1,15 @@
 # Wallpaper Assets
 
-No wallpaper is currently approved for distribution.
+The approved wallpapers in this directory are original custom Aero7-shell
+project artwork:
+
+- `aero_bg_1.png`
+- `aero_bg_2.jpeg`
+- `aero_bg_3.jpg`
+
+`aero_bg_1.png` is the default wallpaper. Set `AERO7_WALLPAPER` to one of the
+approved filenames before running the installer to choose another wallpaper.
 
 Do not distribute or install Microsoft original wallpaper files, edited copies of Microsoft wallpapers, bitmap Windows logos, or images whose source and licence cannot be verified.
 
-The installer skips wallpaper setup gracefully until a compliant wallpaper is added and documented in `docs/ASSET-LICENSING.md`.
+Each installable wallpaper must be listed in `docs/ASSET-LICENSING.md`.

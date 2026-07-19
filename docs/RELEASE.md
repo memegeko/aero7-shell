@@ -1,6 +1,6 @@
 # Release Workflow
 
-Aero7-shell bootstrap downloads a tagged release archive and verifies it with `checksums.txt`. Do not publish or document an unverified archive as stable.
+Aero7-shell bootstrap defaults to the current GitHub `main` branch for alpha testing. When `AERO7_VERSION` is set, it downloads a tagged release archive and verifies it with `checksums.txt`. Do not publish or document an unverified archive as stable.
 
 Build a release from a clean git worktree:
 
@@ -8,7 +8,7 @@ Build a release from a clean git worktree:
 AERO7_VERSION=0.1.0 tools/build-release.sh
 ```
 
-The script uses `git ls-files`, excludes generated output and local assets, writes the archive to `dist/`, and creates `dist/checksums.txt`.
+The script uses `git ls-files`, excludes generated output, writes the archive to `dist/`, and creates `dist/checksums.txt`.
 
 Publish the first release:
 
@@ -22,8 +22,7 @@ Publish the first release:
 Development branch testing can use:
 
 ```bash
-AERO7_BRANCH=main bash bootstrap.sh
+AERO7_REF=main bash bootstrap.sh
 ```
 
-Branch mode is for development only. It still downloads and verifies `checksums.txt` from that branch and does not fall back to unchecked archives.
-
+Branch mode is for development and alpha testing. Set `AERO7_REQUIRE_CHECKSUM=1` if you also publish a matching `checksums.txt` for a branch archive.

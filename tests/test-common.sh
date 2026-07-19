@@ -48,8 +48,13 @@ export AERO7_PROJECT_ROOT="$repo"
 source "$repo/lib/common.sh"
 AERO7_ROOT="$repo"
 source "$repo/lib/assets.sh"
-! aero7_preferred_wallpaper_source >/dev/null 2>&1 || fail "wallpaper resolver should skip when no approved wallpaper exists"
+preferred_wallpaper="$(aero7_preferred_wallpaper_source)"
+[[ "$preferred_wallpaper" == "$repo/assets/wallpapers/aero_bg_1.png" ]] || fail "wallpaper resolver picked wrong default: $preferred_wallpaper"
 ! aero7_wallpaper_is_allowed "$repo/assets/wallpapers/README.md" || fail "wallpaper README was allowed as an installable wallpaper"
+for wallpaper in "$repo"/assets/wallpapers/aero_bg_1.png "$repo"/assets/wallpapers/aero_bg_2.jpeg "$repo"/assets/wallpapers/aero_bg_3.jpg; do
+  aero7_wallpaper_is_allowed "$wallpaper" || fail "approved wallpaper was rejected: $wallpaper"
+done
+! aero7_wallpaper_is_allowed "$repo/assets/wallpapers/windows-original.jpg" || fail "unapproved wallpaper was allowed"
 aero7_avatar_is_allowed "$repo/assets/avatars/aero7-user.png" || fail "safe avatar was rejected"
 ! aero7_avatar_is_allowed "$repo/assets/avatars/usertile10.bmp" || fail "Windows usertile avatar was allowed"
 

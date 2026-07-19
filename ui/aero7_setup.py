@@ -498,38 +498,61 @@ class Aero7Frontend:
         except curses.error:
             pass
 
+    def add_raw(self, y: int, x: int, text: str, attr: int = 0) -> None:
+        rows, cols = self.stdscr.getmaxyx()
+        if y < 0 or y >= rows or x >= cols:
+            return
+        try:
+            self.stdscr.addstr(y, x, text[: max(0, cols - x - 1)], attr)
+        except curses.error:
+            pass
+
+    def color_ready(self) -> bool:
+        return self.color and curses.has_colors()
+
     def draw_frame(self, rows: int, cols: int) -> None:
         title_attr = self.pair(1) | curses.A_BOLD
         self.stdscr.attron(title_attr)
-        self.add(0, 0, " " * (cols - 1), title_attr)
+        self.add_raw(0, 0, " " * (cols - 1), title_attr)
         self.add(0, 2, "Aero7-shell Setup", title_attr)
         version = self.state.version
         self.add(0, max(2, cols - len(version) - 4), version, title_attr)
         self.stdscr.attroff(title_attr)
-        self.add(1, 0, "─" * (cols - 1), self.pair(2))
-        self.add(rows - 3, 0, "─" * (cols - 1), self.pair(2))
+        self.add_raw(1, 0, "─" * (cols - 1), self.pair(2))
+        self.add_raw(rows - 3, 0, "─" * (cols - 1), self.pair(2))
         footer = "  D Details    L Live log    W Warnings    H Help    Q Cancel safely  "
-        self.add(rows - 2, 0, footer.ljust(cols - 1), self.pair(1))
+        self.add_raw(rows - 2, 0, footer.ljust(cols - 1), self.pair(1))
 
     def draw_progress_bar(self, y: int, x: int, width: int, percent: float, active: bool = False) -> None:
         width = max(10, width)
         fill = int(width * max(0.0, min(1.0, percent)))
-        bar = "█" * fill + " " * (width - fill)
-        attr = self.pair(6) if active else self.pair(2)
-        self.add(y, x, "┌" + "─" * width + "┐", self.pair(2))
-        self.add(y + 1, x, "│", self.pair(2))
-        self.add(y + 1, x + 1, bar, attr)
-        self.add(y + 1, x + width + 1, "│", self.pair(2))
-        self.add(y + 2, x, "└" + "─" * width + "┘", self.pair(2))
+        self.add_raw(y, x, "┌" + "─" * width + "┐", self.pair(2))
+        self.add_raw(y + 1, x, "│", self.pair(2))
+        if self.color_ready():
+            attr = self.pair(6) | (curses.A_BOLD if active else 0)
+            self.add_raw(y + 1, x + 1, " " * width, 0)
+            if fill > 0:
+                self.add_raw(y + 1, x + 1, " " * fill, attr)
+        else:
+            bar = "#" * fill + "." * (width - fill)
+            self.add_raw(y + 1, x + 1, bar)
+        self.add_raw(y + 1, x + width + 1, "│", self.pair(2))
+        self.add_raw(y + 2, x, "└" + "─" * width + "┘", self.pair(2))
 
     def draw_flat_progress_bar(self, y: int, x: int, width: int, percent: float, active: bool = False) -> None:
         width = max(10, width)
         inner = max(8, width - 2)
         fill = int(inner * max(0.0, min(1.0, percent)))
-        attr = self.pair(6) if active else self.pair(2)
-        self.add(y, x, "[", self.pair(2))
-        self.add(y, x + 1, "█" * fill + " " * (inner - fill), attr)
-        self.add(y, x + inner + 1, "]", self.pair(2))
+        self.add_raw(y, x, "[", self.pair(2))
+        if self.color_ready():
+            attr = self.pair(6) | (curses.A_BOLD if active else 0)
+            self.add_raw(y, x + 1, " " * inner, 0)
+            if fill > 0:
+                self.add_raw(y, x + 1, " " * fill, attr)
+        else:
+            bar = "#" * fill + "." * (inner - fill)
+            self.add_raw(y, x + 1, bar)
+        self.add_raw(y, x + inner + 1, "]", self.pair(2))
 
     def draw_activity_bar(self, y: int, x: int, width: int) -> None:
         width = max(10, width)
@@ -537,7 +560,7 @@ class Aero7Frontend:
         chars = [" "] * width
         for offset in range(8):
             chars[(tick + offset) % width] = "▓"
-        self.add(y, x, "[" + "".join(chars) + "]", self.pair(2))
+        self.add_raw(y, x, "[" + "".join(chars) + "]", self.pair(2))
 
     def draw_main(self, rows: int, cols: int) -> None:
         left = 4

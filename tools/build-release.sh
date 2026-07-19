@@ -36,7 +36,7 @@ while IFS= read -r file; do
     dist/*|*.log|.git/*|*/.cache/*|*/logs/*|*/state/*|*/backups/*)
       continue
       ;;
-    assets/wallpapers/*.jpg|assets/wallpapers/*.jpeg|assets/wallpapers/*.png|assets/wallpapers/*.bmp|assets/wallpapers/*.svg|assets/avatars/usertile*.bmp)
+    assets/avatars/usertile*.bmp)
       continue
       ;;
   esac
