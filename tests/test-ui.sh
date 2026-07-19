@@ -162,34 +162,37 @@ if compgen -G "$mgmt_dir/logs/aero7-*.log" >/dev/null; then
 fi
 
 status_output="$(
-  AERO7_HOME="$mgmt_dir/home" \
-  AERO7_LOG_DIR="$mgmt_dir/status-logs" \
-  AERO7_LOG_FILE= \
-  AERO7_USER_STATE_DIR="$mgmt_dir/state" \
-  TERM=dumb \
-  "$repo/commands/aero7" --plain status
+  env -u AERO7_PROJECT_ROOT \
+    AERO7_HOME="$mgmt_dir/home" \
+    AERO7_LOG_DIR="$mgmt_dir/status-logs" \
+    AERO7_LOG_FILE= \
+    AERO7_USER_STATE_DIR="$mgmt_dir/state" \
+    TERM=dumb \
+    "$repo/commands/aero7" --plain status
 )"
 [[ "$status_output" == *"Aero7-shell Status"* ]] || fail "aero7 status missed title"
 [[ "$status_output" == *"Warnings"* ]] || fail "aero7 status missed warning count"
 
 apps_output="$(
-  AERO7_HOME="$mgmt_dir/home" \
-  AERO7_LOG_DIR="$mgmt_dir/apps-logs" \
-  AERO7_LOG_FILE= \
-  AERO7_USER_STATE_DIR="$mgmt_dir/state" \
-  TERM=dumb \
-  "$repo/commands/aero7" --plain apps status
+  env -u AERO7_PROJECT_ROOT \
+    AERO7_HOME="$mgmt_dir/home" \
+    AERO7_LOG_DIR="$mgmt_dir/apps-logs" \
+    AERO7_LOG_FILE= \
+    AERO7_USER_STATE_DIR="$mgmt_dir/state" \
+    TERM=dumb \
+    "$repo/commands/aero7" --plain apps status
 )"
 [[ "$apps_output" == *"Aero7-shell Applications"* ]] || fail "aero7 apps status missed title"
 [[ "$apps_output" == *"Result"* ]] || fail "aero7 apps status missed result"
 
 plymouth_output="$(
-  AERO7_HOME="$mgmt_dir/home" \
-  AERO7_LOG_DIR="$mgmt_dir/plymouth-logs" \
-  AERO7_LOG_FILE= \
-  AERO7_USER_STATE_DIR="$mgmt_dir/state" \
-  TERM=dumb \
-  "$repo/commands/aero7" --plain plymouth status
+  env -u AERO7_PROJECT_ROOT \
+    AERO7_HOME="$mgmt_dir/home" \
+    AERO7_LOG_DIR="$mgmt_dir/plymouth-logs" \
+    AERO7_LOG_FILE= \
+    AERO7_USER_STATE_DIR="$mgmt_dir/state" \
+    TERM=dumb \
+    "$repo/commands/aero7" --plain plymouth status
 )"
 [[ "$plymouth_output" == *"Aero7-shell Plymouth"* ]] || fail "aero7 plymouth status missed title"
 [[ "$plymouth_output" == *"Bootloader"* ]] || fail "aero7 plymouth status missed bootloader"

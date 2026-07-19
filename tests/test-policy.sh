@@ -30,6 +30,8 @@ unset AERO7_SUDO_KEEPALIVE_PID
 aero7_sudo_keepalive_start
 [[ -z "${AERO7_SUDO_KEEPALIVE_PID:-}" ]] || fail "sudo keepalive started during dry-run"
 aero7_sudo_keepalive_stop
+grep -q 'AERO7_SUDO_KEEPALIVE_INTERVAL:-15' "$repo/lib/common.sh" || fail "sudo keepalive interval is not short enough for long AUR builds"
+grep -q 'sudo credential keepalive stopped' "$repo/lib/common.sh" || fail "sudo keepalive stop is not logged"
 
 while IFS= read -r denied; do
   [[ -n "$denied" ]] || continue
@@ -239,10 +241,13 @@ EOF
   export AERO7_CACHE_DIR="$tmp/yay-bootstrap-cache"
   user_log="$tmp/yay-bootstrap-user.log"
   sudo_log="$tmp/yay-bootstrap-sudo.log"
+  deps_log="$tmp/yay-bootstrap-deps.log"
   aero7_require_arch_or_dry_run() { return 0; }
   aero7_aur_guard_not_root() { return 0; }
   aero7_yay_available() { return 1; }
-  aero7_pacman_install_needed() { return 0; }
+  aero7_pacman_install_needed() {
+    printf '%s\n' "$*" >>"$deps_log"
+  }
   aero7_user_run() {
     printf '%s\n' "$*" >>"$user_log"
     case "${1:-}" in
@@ -265,7 +270,9 @@ EOF
     [[ "${1:-}" == "--version" ]]
   }
   aero7_install_yay
-  grep -q 'makepkg.*-s.*--noconfirm' "$user_log" || fail "yay bootstrap did not build package with makepkg -s --noconfirm"
+  grep -q 'git base-devel go' "$deps_log" || fail "yay bootstrap did not install go before makepkg"
+  grep -q 'makepkg.*--noconfirm' "$user_log" || fail "yay bootstrap did not build package with makepkg --noconfirm"
+  ! grep -q 'makepkg.* -s' "$user_log" || fail "yay bootstrap still let makepkg invoke sudo for dependency installation"
   ! grep -q 'makepkg.*-si' "$user_log" || fail "yay bootstrap still used makepkg -si"
   grep -q 'pacman -U --noconfirm' "$sudo_log" || fail "yay bootstrap did not install through central sudo pacman wrapper"
 )

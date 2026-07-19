@@ -107,10 +107,10 @@ aero7_install_yay() {
   fi
 
   aero7_action "Preparing yay AUR helper"
-  aero7_pacman_install_needed git base-devel
+  aero7_pacman_install_needed git base-devel go
 
   local source_dir="$AERO7_CACHE_DIR/sources/yay"
-  local makepkg_args=(-s)
+  local makepkg_args=()
   local pacman_args=()
   local stream=0
   if aero7_non_interactive || [[ "${AERO7_ASSUME_YES:-0}" == "1" ]]; then
@@ -182,6 +182,30 @@ aero7_yay_install_packages() {
   done
 
   aero7_action "Installing Aero packages from the AUR"
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    local tui_index=0
+    for package in "${packages[@]}"; do
+      tui_index=$((tui_index + 1))
+      aero7_progress_item "$((tui_index - 1))" "${#packages[@]}" "$package"
+      aero7_event_emit action_start \
+        "title=Building $package" \
+        "stage=${AERO7_CURRENT_STAGE:-startup}" \
+        "package_current=$tui_index" \
+        "package_total=${#packages[@]}" \
+        "package=$package"
+      if aero7_aur_needs_conflict_resolution "$package"; then
+        aero7_yay_install_package_group 1 "$package"
+      else
+        aero7_yay_install_package_group 0 "$package"
+      fi
+      aero7_state_append "installed_aur_packages" "$package"
+      aero7_progress_item "$tui_index" "${#packages[@]}" "$package"
+      aero7_ok "$package installed"
+    done
+    aero7_ok "${#packages[@]} AUR package(s) installed"
+    return 0
+  fi
+
   local index=0
   for package in "${packages[@]}"; do
     index=$((index + 1))

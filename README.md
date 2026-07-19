@@ -79,6 +79,7 @@ aero7 wine status
 
 - [Installation](docs/INSTALLATION.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [UI architecture](docs/UI-ARCHITECTURE.md)
 - [Applications](docs/APPLICATIONS.md)
 - [Boot configuration](docs/BOOT-CONFIGURATION.md)
 - [Wayland limitations](docs/WAYLAND-LIMITATIONS.md)

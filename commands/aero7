@@ -42,14 +42,14 @@ resolve_root() {
     printf '%s\n' "$AERO7_PROJECT_ROOT"
     return 0
   fi
-  if [[ -d /usr/local/lib/aero7-shell/lib ]]; then
-    printf '%s\n' /usr/local/lib/aero7-shell
-    return 0
-  fi
   local script_dir
   script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
   if [[ -d "$script_dir/../lib" ]]; then
     cd -- "$script_dir/.." && pwd -P
+    return 0
+  fi
+  if [[ -d /usr/local/lib/aero7-shell/lib ]]; then
+    printf '%s\n' /usr/local/lib/aero7-shell
     return 0
   fi
   return 1

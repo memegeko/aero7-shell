@@ -5,15 +5,29 @@ if [[ -n "${AERO7_VALIDATION_LOADED:-}" ]]; then
 fi
 AERO7_VALIDATION_LOADED=1
 
+aero7_validation_tui_backend() {
+  declare -F aero7_tui_backend >/dev/null 2>&1 &&
+    aero7_tui_backend &&
+    declare -F aero7_event_action_output >/dev/null 2>&1
+}
+
 aero7_doctor_line() {
   local color="$1"
   local icon="$2"
   shift 2
+  if aero7_validation_tui_backend; then
+    aero7_event_action_output "$*"
+    return 0
+  fi
   printf '    %s%s%s %s\n' "$color" "$icon" "$AERO7_C_RESET" "$*"
 }
 
 aero7_doctor_section() {
   local title="$1"
+  if aero7_validation_tui_backend; then
+    aero7_event_action_phase "$title"
+    return 0
+  fi
   if [[ -n "${AERO7_UI_LOADED:-}" ]]; then
     aero7_ui_quiet && return 0
     printf '\n  %s%s%s\n' "$AERO7_C_BOLD" "$title" "$AERO7_C_RESET"
@@ -33,6 +47,28 @@ aero7_check_status() {
       AERO7_DOCTOR_WARNINGS="$((AERO7_DOCTOR_WARNINGS + 1))"
       ;;
   esac
+
+  if aero7_validation_tui_backend; then
+    case "$status" in
+      OK)
+        aero7_event_item complete "$label"
+        ;;
+      FAILED)
+        aero7_event_item failed "$label"
+        ;;
+      WARNING)
+        aero7_event_item warning "$label"
+        aero7_event_warning "$label"
+        ;;
+      NOT\ INSTALLED)
+        aero7_event_item skipped "$label"
+        ;;
+      *)
+        aero7_event_action_output "$label: $status"
+        ;;
+    esac
+    return 0
+  fi
 
   if [[ -n "${AERO7_UI_LOADED:-}" ]]; then
     if aero7_ui_quiet && [[ "$status" != "FAILED" && "$status" != "WARNING" ]]; then
@@ -84,6 +120,11 @@ aero7_doctor_result() {
     result="Healthy"
   fi
 
+  if aero7_validation_tui_backend; then
+    aero7_event_action_output "Doctor result: $result"
+    return 0
+  fi
+
   if [[ -n "${AERO7_UI_LOADED:-}" ]]; then
     printf '\n  %sResult%s        %s\n' "$AERO7_C_CYAN" "$AERO7_C_RESET" "$result"
   else
@@ -95,7 +136,9 @@ aero7_doctor() {
   AERO7_DOCTOR_FAILURES=0
   AERO7_DOCTOR_WARNINGS=0
 
-  if [[ -n "${AERO7_UI_LOADED:-}" ]]; then
+  if aero7_validation_tui_backend; then
+    aero7_event_action_start "Running final validation"
+  elif [[ -n "${AERO7_UI_LOADED:-}" ]]; then
     aero7_ui_quiet || aero7_ui_box "Aero7-shell Doctor" ""
   else
     printf 'Aero7-shell Doctor\n'
@@ -333,6 +376,23 @@ aero7_final_report_pretty() {
 }
 
 aero7_final_report() {
+  if aero7_validation_tui_backend; then
+    local warnings failed_optional backup reboot logout
+    warnings="$(aero7_state_count_unique warnings)"
+    failed_optional="$(aero7_state_count_unique failed_optional_applications)"
+    backup="$(aero7_state_get backup_id 2>/dev/null || printf 'none')"
+    reboot="$(aero7_state_get reboot_recommended 2>/dev/null || printf 'no')"
+    logout="$(aero7_state_get logout_recommended 2>/dev/null || printf 'no')"
+    aero7_event_action_phase "Final report"
+    aero7_event_action_output "Warnings: $warnings"
+    aero7_event_action_output "Failed optional applications: $failed_optional"
+    aero7_event_action_output "Backup: $backup"
+    aero7_event_action_output "Logout required: $logout"
+    aero7_event_action_output "Reboot required: $reboot"
+    aero7_event_action_output "Log: ${AERO7_LOG_FILE:-unknown}"
+    return 0
+  fi
+
   if [[ -n "${AERO7_UI_LOADED:-}" ]]; then
     aero7_final_report_pretty
     return 0

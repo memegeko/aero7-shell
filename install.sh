@@ -7,6 +7,7 @@ export AERO7_PROJECT_ROOT
 # shellcheck source=lib/common.sh
 source "$AERO7_PROJECT_ROOT/lib/common.sh"
 
+AERO7_BACKEND_RUN=0
 AERO7_ASSUME_YES=1
 AERO7_NON_INTERACTIVE=1
 AERO7_DRY_RUN=0
@@ -14,6 +15,11 @@ AERO7_DEBUG="${AERO7_DEBUG:-0}"
 AERO7_NO_COLOR="${AERO7_NO_COLOR:-0}"
 AERO7_PLAIN="${AERO7_PLAIN:-0}"
 AERO7_QUIET="${AERO7_QUIET:-0}"
+AERO7_TUI="${AERO7_TUI:-0}"
+AERO7_TUI_REQUESTED=0
+AERO7_UI_DIAGNOSTICS=0
+AERO7_UI_DEMO=""
+AERO7_INTERACTIVE_REQUESTED=0
 AERO7_RESUME=0
 AERO7_NO_REBOOT=0
 AERO7_REPLACE_LAYOUT="ask"
@@ -40,6 +46,9 @@ Options:
   --plain                Use simple ASCII line output
   --quiet                Show only stages, warnings, failures, and summary
   --debug                Stream command output and enable diagnostics
+  --tui                  Force the full-screen curses interface
+  --ui-diagnostics       Explain UI mode selection
+  --ui-demo MODE         Run a curses UI demo
   --resume               Resume from saved state
   --restart-stage STAGE  Restart from a specific stage id
   --skip-stage STAGE     Skip a specific stage id
@@ -53,16 +62,26 @@ EOF
 
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
+    --backend-run) AERO7_BACKEND_RUN=1 ;;
     --help) usage; exit 0 ;;
     --version) printf '%s\n' "$AERO7_VERSION"; exit 0 ;;
     --yes) AERO7_ASSUME_YES=1 ;;
     --non-interactive) AERO7_NON_INTERACTIVE=1 ;;
-    --interactive) AERO7_ASSUME_YES=0; AERO7_NON_INTERACTIVE=0 ;;
+    --interactive) AERO7_ASSUME_YES=0; AERO7_NON_INTERACTIVE=0; AERO7_INTERACTIVE_REQUESTED=1 ;;
     --dry-run) AERO7_DRY_RUN=1 ;;
     --no-color) AERO7_NO_COLOR=1 ;;
     --plain) AERO7_PLAIN=1 ;;
     --quiet) AERO7_QUIET=1 ;;
     --debug) AERO7_DEBUG=1 ;;
+    --tui) AERO7_TUI=1; AERO7_TUI_REQUESTED=1 ;;
+    --ui-diagnostics) AERO7_UI_DIAGNOSTICS=1 ;;
+    --ui-demo)
+      shift
+      [[ "$#" -gt 0 ]] || aero7_die "--ui-demo requires a mode."
+      AERO7_UI_DEMO="$1"
+      AERO7_TUI=1
+      AERO7_TUI_REQUESTED=1
+      ;;
     --resume) AERO7_RESUME=1 ;;
     --restart-stage)
       shift
@@ -87,9 +106,10 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 export AERO7_ASSUME_YES AERO7_NON_INTERACTIVE AERO7_DRY_RUN AERO7_DEBUG
-export AERO7_NO_COLOR AERO7_PLAIN AERO7_QUIET
+export AERO7_NO_COLOR AERO7_PLAIN AERO7_QUIET AERO7_TUI
 export AERO7_RESUME AERO7_NO_REBOOT AERO7_REPLACE_LAYOUT
 export AERO7_INSTALL_WINXPLORER AERO7_INSTALL_SEVULET AERO7_REBOOT
+export AERO7_BACKEND_RUN
 
 if [[ "$AERO7_DEBUG" == "1" ]]; then
   export PS4='+ ${BASH_SOURCE##*/}:${LINENO}:${FUNCNAME[0]:-main}:stage=${AERO7_CURRENT_STAGE:-startup}: '
@@ -98,6 +118,10 @@ fi
 
 # shellcheck source=lib/logging.sh
 source "$AERO7_PROJECT_ROOT/lib/logging.sh"
+# shellcheck source=lib/ui-events.sh
+source "$AERO7_PROJECT_ROOT/lib/ui-events.sh"
+# shellcheck source=lib/ui-controller.sh
+source "$AERO7_PROJECT_ROOT/lib/ui-controller.sh"
 # shellcheck source=lib/ui.sh
 source "$AERO7_PROJECT_ROOT/lib/ui.sh"
 # shellcheck source=lib/prompts.sh
@@ -132,6 +156,62 @@ source "$AERO7_PROJECT_ROOT/lib/ownership.sh"
 trap 'aero7_unexpected_error "$LINENO" "$?"' ERR
 
 aero7_init_paths
+
+if [[ "$AERO7_UI_DIAGNOSTICS" == "1" ]]; then
+  aero7_ui_diagnostics
+  exit 0
+fi
+
+build_backend_args() {
+  local args=(--backend-run)
+  [[ "$AERO7_DRY_RUN" == "1" ]] && args+=(--dry-run)
+  [[ "$AERO7_NO_REBOOT" == "1" ]] && args+=(--no-reboot)
+  [[ "$AERO7_RESUME" == "1" ]] && args+=(--resume)
+  [[ "$AERO7_INTERACTIVE_REQUESTED" == "1" ]] && args+=(--interactive)
+  [[ "$AERO7_REPLACE_LAYOUT" == "yes" ]] && args+=(--replace-layout)
+  [[ "$AERO7_REPLACE_LAYOUT" == "no" ]] && args+=(--keep-layout)
+  [[ "$AERO7_INSTALL_WINXPLORER" == "yes" ]] && args+=(--install-winxplorer)
+  [[ "$AERO7_INSTALL_SEVULET" == "yes" ]] && args+=(--install-sevulet)
+  [[ -n "$AERO7_RESTART_STAGE" ]] && args+=(--restart-stage "$AERO7_RESTART_STAGE")
+  local skipped
+  for skipped in "${AERO7_SKIP_STAGES[@]}"; do
+    args+=(--skip-stage "$skipped")
+  done
+  printf '%s\0' "${args[@]}"
+}
+
+if [[ -n "$AERO7_UI_DEMO" ]]; then
+  ui_mode="$(aero7_select_ui_mode)"
+  if [[ "$ui_mode" != "tui" ]]; then
+    printf 'TUI unavailable: %s\n' "${ui_mode#plain:}" >&2
+    exit 1
+  fi
+  aero7_launch_tui --demo "$AERO7_UI_DEMO"
+  exit $?
+fi
+
+if [[ "$AERO7_BACKEND_RUN" != "1" ]]; then
+  ui_mode="$(aero7_select_ui_mode)"
+  if [[ "$AERO7_TUI" == "1" || "$ui_mode" == "tui" ]]; then
+    if [[ "$ui_mode" != "tui" ]]; then
+      printf 'TUI unavailable: %s\n' "${ui_mode#plain:}" >&2
+      exit 1
+    fi
+    aero7_tui_bootstrap_python_if_needed
+    if ! aero7_dry_run; then
+      printf 'Aero7-shell Setup\n'
+      printf 'Validating sudo before starting the full-screen installer...\n'
+      sudo -v || aero7_die "Could not validate sudo credentials."
+    fi
+    mapfile -d '' -t backend_args < <(build_backend_args)
+    aero7_launch_tui --backend "$AERO7_PROJECT_ROOT/install.sh" "${backend_args[@]/#/--backend-arg=}"
+    exit $?
+  elif [[ "$AERO7_TUI_REQUESTED" == "1" ]]; then
+    printf 'TUI unavailable: %s\n' "${ui_mode#plain:}" >&2
+    exit 1
+  fi
+fi
+
 aero7_logging_init install
 aero7_refuse_root_install
 AERO7_RECORD_WARNINGS=1
@@ -164,6 +244,16 @@ stage_should_skip() {
   return 1
 }
 
+aero7_stage_complete_event() {
+  local stage_id="$1"
+  local status="${2:-complete}"
+  if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+    aero7_tui_backend &&
+    declare -F aero7_event_stage_complete >/dev/null 2>&1; then
+    aero7_event_stage_complete "$stage_id" "$status" "$(aero7_stage_title "$stage_id")"
+  fi
+}
+
 run_stage() {
   local file="$1"
   local stage_id
@@ -179,12 +269,14 @@ run_stage() {
 
   if stage_should_skip "$stage_id"; then
     aero7_skip "$stage_id skipped by option."
+    aero7_stage_complete_event "$stage_id" skipped
     return 0
   fi
 
   if aero7_state_stage_complete "$stage_id" && [[ "$AERO7_RESTART_STAGE" != "$stage_id" ]]; then
     if stage_validate; then
       aero7_skip "$stage_id already complete."
+      aero7_stage_complete_event "$stage_id" complete
       return 0
     fi
     aero7_warn "$stage_id was marked complete but validation failed; running it again."
@@ -192,6 +284,7 @@ run_stage() {
 
   if ! stage_check; then
     aero7_skip "$stage_id check requested skip."
+    aero7_stage_complete_event "$stage_id" skipped
     return 0
   fi
 
@@ -210,7 +303,10 @@ run_stage() {
 
   aero7_state_mark_stage_complete "$stage_id"
   elapsed=$(($(date +%s) - started_at))
-  aero7_ok "Completed in $(aero7_format_duration "$elapsed")"
+  if [[ "$stage_id" != "140-validation" ]]; then
+    aero7_ok "Completed in $(aero7_format_duration "$elapsed")"
+  fi
+  aero7_stage_complete_event "$stage_id" complete
 }
 
 aero7_title
@@ -245,6 +341,11 @@ for stage_file in "${stage_files[@]}"; do
 done
 
 total="${#selected_stage_files[@]}"
+if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+  aero7_tui_backend &&
+  declare -F aero7_event_session_start >/dev/null 2>&1; then
+  aero7_event_session_start "$total"
+fi
 index=0
 for stage_file in "${selected_stage_files[@]}"; do
   index=$((index + 1))
@@ -254,4 +355,14 @@ for stage_file in "${selected_stage_files[@]}"; do
 done
 
 aero7_state_set "current_stage" "complete"
-aero7_detail "Installation flow completed. Review the final report and reboot when ready."
+aero7_info "Installation flow completed. Review the final report and reboot when ready."
+if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+  aero7_tui_backend &&
+  declare -F aero7_event_session_complete >/dev/null 2>&1; then
+  warnings="$(aero7_state_count_unique warnings 2>/dev/null || printf '0')"
+  reboot_required=false
+  if [[ "$(aero7_state_get reboot_recommended 2>/dev/null || printf 'no')" == "yes" ]]; then
+    reboot_required=true
+  fi
+  aero7_event_session_complete "$warnings" "$reboot_required"
+fi

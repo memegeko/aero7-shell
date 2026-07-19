@@ -17,7 +17,7 @@ aero7_ui_init() {
   fi
 
   AERO7_UI_UNICODE=0
-  if [[ "$AERO7_UI_PLAIN" != "1" && "$locale" =~ ([Uu][Tt][Ff]-?8) ]]; then
+  if [[ "$AERO7_UI_PLAIN" != "1" && ( -z "$locale" || "$locale" =~ ([Uu][Tt][Ff]-?8) ) ]]; then
     AERO7_UI_UNICODE=1
   fi
 
@@ -62,6 +62,31 @@ aero7_ui_init() {
     AERO7_ICON_DETAIL="*"
   fi
 
+  if [[ "$AERO7_UI_UNICODE" == "1" ]]; then
+    if [[ "${TERM:-}" == "linux" ]]; then
+      AERO7_BOX_TL="/"
+      AERO7_BOX_TR="\\"
+      AERO7_BOX_BL="\\"
+      AERO7_BOX_BR="/"
+      AERO7_BOX_H="="
+      AERO7_BOX_V="|"
+    else
+      AERO7_BOX_TL="╭"
+      AERO7_BOX_TR="╮"
+      AERO7_BOX_BL="╰"
+      AERO7_BOX_BR="╯"
+      AERO7_BOX_H="─"
+      AERO7_BOX_V="│"
+    fi
+  else
+    AERO7_BOX_TL="+"
+    AERO7_BOX_TR="+"
+    AERO7_BOX_BL="+"
+    AERO7_BOX_BR="+"
+    AERO7_BOX_H="-"
+    AERO7_BOX_V="|"
+  fi
+
   export AERO7_UI_TTY AERO7_UI_PLAIN AERO7_UI_UNICODE AERO7_UI_COLOR
 }
 
@@ -80,7 +105,7 @@ aero7_ui_center_line() {
     pad_left=$(((width - text_width) / 2))
     pad_right=$((width - text_width - pad_left))
   fi
-  printf '│%*s%s%*s│\n' "$pad_left" "" "$text" "$pad_right" ""
+  printf '%s%*s%s%*s%s\n' "$AERO7_BOX_V" "$pad_left" "" "$text" "$pad_right" "" "$AERO7_BOX_V"
 }
 
 aero7_ui_rule() {
@@ -104,15 +129,42 @@ aero7_ui_box() {
     return 0
   fi
 
-  rule="$(aero7_ui_rule "─" "$width")"
-  printf '%s╭%s╮%s\n' "$AERO7_C_BLUE" "$rule" "$AERO7_C_RESET"
+  rule="$(aero7_ui_rule "$AERO7_BOX_H" "$width")"
+  printf '%s%s%s%s%s\n' "$AERO7_C_BLUE" "$AERO7_BOX_TL" "$rule" "$AERO7_BOX_TR" "$AERO7_C_RESET"
   printf '%s' "$AERO7_C_BLUE"
   aero7_ui_center_line "$title" "$width"
   if [[ -n "$subtitle" ]]; then
     printf '%s' "$AERO7_C_CYAN"
     aero7_ui_center_line "$subtitle" "$width"
   fi
-  printf '%s╰%s╯%s\n\n' "$AERO7_C_BLUE" "$rule" "$AERO7_C_RESET"
+  printf '%s%s%s%s%s\n\n' "$AERO7_C_BLUE" "$AERO7_BOX_BL" "$rule" "$AERO7_BOX_BR" "$AERO7_C_RESET"
+}
+
+aero7_ui_linux_console() {
+  [[ "${TERM:-}" == "linux" && "$AERO7_UI_TTY" == "1" && "$AERO7_UI_PLAIN" != "1" ]]
+}
+
+aero7_console_dashboard_line() {
+  local width="$1"
+  local text="$2"
+  printf '%s|%s %-*s %s|%s\n' "$AERO7_C_BLUE" "$AERO7_C_RESET" "$width" "$text" "$AERO7_C_BLUE" "$AERO7_C_RESET"
+}
+
+aero7_console_dashboard() {
+  local system="$1"
+  local width=66 rule line
+  rule="$(aero7_ui_rule "=" "$((width + 2))")"
+
+  printf '%s/%s\\%s\n' "$AERO7_C_BLUE" "$rule" "$AERO7_C_RESET"
+  aero7_console_dashboard_line "$width" "Aero7-shell Setup"
+  aero7_console_dashboard_line "$width" "Windows 7-inspired desktop for Arch Linux"
+  printf '%s|%s%s%s|%s\n' "$AERO7_C_BLUE" "$AERO7_C_RESET" "$(aero7_ui_rule "-" "$((width + 2))")" "$AERO7_C_BLUE" "$AERO7_C_RESET"
+  printf -v line 'System      %s' "$system"
+  aero7_console_dashboard_line "$width" "$line"
+  aero7_console_dashboard_line "$width" "Desktop     KDE Plasma Wayland"
+  printf -v line 'Installer   Aero7-shell %s' "$AERO7_VERSION"
+  aero7_console_dashboard_line "$width" "$line"
+  printf '%s\\%s/%s\n\n' "$AERO7_C_BLUE" "$rule" "$AERO7_C_RESET"
 }
 
 aero7_stage_title() {
@@ -146,15 +198,23 @@ aero7_format_duration() {
 }
 
 aero7_title() {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    return 0
+  fi
+  local system="Arch Linux"
+  if declare -F aero7_read_os_release_value >/dev/null 2>&1; then
+    system="$(aero7_read_os_release_value PRETTY_NAME 2>/dev/null || printf 'Arch Linux')"
+  fi
+  if aero7_ui_linux_console; then
+    aero7_console_dashboard "$system"
+    return 0
+  fi
+
   aero7_ui_box "Aero7-shell Setup" "Windows 7-inspired desktop for Arch Linux"
   if aero7_ui_quiet; then
     return 0
   fi
 
-  local system="Arch Linux"
-  if declare -F aero7_read_os_release_value >/dev/null 2>&1; then
-    system="$(aero7_read_os_release_value PRETTY_NAME 2>/dev/null || printf 'Arch Linux')"
-  fi
   printf '  %sSystem%s      %s\n' "$AERO7_C_CYAN" "$AERO7_C_RESET" "$system"
   printf '  %sDesktop%s     KDE Plasma Wayland\n' "$AERO7_C_CYAN" "$AERO7_C_RESET"
   printf '  %sInstaller%s   Aero7-shell %s\n\n' "$AERO7_C_CYAN" "$AERO7_C_RESET" "$AERO7_VERSION"
@@ -166,7 +226,18 @@ aero7_stage_banner() {
   local total="$3"
   local title width marker
   title="$(aero7_stage_title "$stage")"
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_event_stage_start "$stage" "$index" "$total" "$title"
+    return 0
+  fi
   width="${#total}"
+  [[ "$width" -lt 2 ]] && width=2
+  if aero7_ui_linux_console; then
+    printf '\n  %s==[ %0*d/%0*d ]==%s %s%s%s\n' \
+      "$AERO7_C_BLUE" "$width" "$index" "$width" "$total" "$AERO7_C_RESET" \
+      "$AERO7_C_BOLD" "$title" "$AERO7_C_RESET"
+    return 0
+  fi
   printf -v marker '[ %*d/%d ]' "$width" "$index" "$total"
   printf '\n  %s%s%s %s%s%s\n' "$AERO7_C_BLUE" "$marker" "$AERO7_C_RESET" "$AERO7_C_BOLD" "$title" "$AERO7_C_RESET"
 }
@@ -179,34 +250,63 @@ aero7_ui_status_line() {
 }
 
 aero7_ok() {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_event_item complete "$*"
+    return 0
+  fi
   aero7_ui_quiet && return 0
   aero7_ui_status_line "$AERO7_C_GREEN" "$AERO7_ICON_OK" "$*"
 }
 
 aero7_skip() {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_event_item skipped "$*"
+    return 0
+  fi
   aero7_ui_quiet && return 0
   aero7_ui_status_line "$AERO7_C_DIM" "$AERO7_ICON_SKIP" "$*"
 }
 
 aero7_fail() {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_event_item failed "$*"
+    return 0
+  fi
   aero7_ui_status_line "$AERO7_C_RED" "$AERO7_ICON_FAIL" "$*"
 }
 
 aero7_warning_line() {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_event_warning "$*"
+    return 0
+  fi
   aero7_ui_status_line "$AERO7_C_YELLOW" "$AERO7_ICON_WARN" "$*"
 }
 
 aero7_action() {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_event_action_start "$*"
+    return 0
+  fi
   aero7_ui_quiet && return 0
   aero7_ui_status_line "$AERO7_C_CYAN" "$AERO7_ICON_ACTION" "$*"
 }
 
 aero7_detail() {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_event_action_output "$*"
+    return 0
+  fi
   aero7_ui_quiet && return 0
   aero7_ui_status_line "$AERO7_C_DIM" "$AERO7_ICON_DETAIL" "$*"
 }
 
 aero7_progress_item() {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_event_stage_progress "$1" "$2" "${*:3}"
+    aero7_event_item active "${*:3}"
+    return 0
+  fi
   aero7_ui_quiet && return 0
   local index="$1"
   local total="$2"
@@ -224,12 +324,12 @@ aero7_prompt_box() {
     return 0
   fi
   local width=62 rule line
-  rule="$(aero7_ui_rule "─" "$width")"
-  printf '\n%s╭─ %s %s╮%s\n' "$AERO7_C_BLUE" "$title" "$(aero7_ui_rule "─" "$((width - ${#title} - 3))")" "$AERO7_C_RESET"
+  rule="$(aero7_ui_rule "$AERO7_BOX_H" "$width")"
+  printf '\n%s%s%s %s %s%s%s\n' "$AERO7_C_BLUE" "$AERO7_BOX_TL" "$AERO7_BOX_H" "$title" "$(aero7_ui_rule "$AERO7_BOX_H" "$((width - ${#title} - 3))")" "$AERO7_BOX_TR" "$AERO7_C_RESET"
   for line in "$@"; do
-    printf '%s│%s %-60s %s│%s\n' "$AERO7_C_BLUE" "$AERO7_C_RESET" "$line" "$AERO7_C_BLUE" "$AERO7_C_RESET"
+    printf '%s%s%s %-60s %s%s%s\n' "$AERO7_C_BLUE" "$AERO7_BOX_V" "$AERO7_C_RESET" "$line" "$AERO7_C_BLUE" "$AERO7_BOX_V" "$AERO7_C_RESET"
   done
-  printf '%s╰%s╯%s\n\n' "$AERO7_C_BLUE" "$rule" "$AERO7_C_RESET"
+  printf '%s%s%s%s%s\n\n' "$AERO7_C_BLUE" "$AERO7_BOX_BL" "$rule" "$AERO7_BOX_BR" "$AERO7_C_RESET"
 }
 
 aero7_error_screen() {
@@ -246,11 +346,17 @@ aero7_error_screen() {
   printf '\n' >&2
   if [[ "$AERO7_UI_UNICODE" == "1" ]]; then
     local width=62 rule
-    rule="$(aero7_ui_rule "─" "$width")"
-    printf '%s╭──────────────── Installation failed ────────────────╮%s\n' "$AERO7_C_RED" "$AERO7_C_RESET" >&2
-    printf '%s│%s Stage: %-51s %s│%s\n' "$AERO7_C_RED" "$AERO7_C_RESET" "$title" "$AERO7_C_RED" "$AERO7_C_RESET" >&2
-    printf '%s│%s Error: %-51s %s│%s\n' "$AERO7_C_RED" "$AERO7_C_RESET" "$message" "$AERO7_C_RED" "$AERO7_C_RESET" >&2
-    printf '%s╰%s╯%s\n' "$AERO7_C_RED" "$rule" "$AERO7_C_RESET" >&2
+    rule="$(aero7_ui_rule "$AERO7_BOX_H" "$width")"
+    printf '%s%s%s Installation failed %s%s%s\n' \
+      "$AERO7_C_RED" \
+      "$AERO7_BOX_TL" \
+      "$(aero7_ui_rule "$AERO7_BOX_H" 16)" \
+      "$(aero7_ui_rule "$AERO7_BOX_H" 24)" \
+      "$AERO7_BOX_TR" \
+      "$AERO7_C_RESET" >&2
+    printf '%s%s%s Stage: %-51s %s%s%s\n' "$AERO7_C_RED" "$AERO7_BOX_V" "$AERO7_C_RESET" "$title" "$AERO7_C_RED" "$AERO7_BOX_V" "$AERO7_C_RESET" >&2
+    printf '%s%s%s Error: %-51s %s%s%s\n' "$AERO7_C_RED" "$AERO7_BOX_V" "$AERO7_C_RESET" "$message" "$AERO7_C_RED" "$AERO7_BOX_V" "$AERO7_C_RESET" >&2
+    printf '%s%s%s%s%s\n' "$AERO7_C_RED" "$AERO7_BOX_BL" "$rule" "$AERO7_BOX_BR" "$AERO7_C_RESET" >&2
   else
     printf 'Installation failed\n' >&2
     printf 'Stage: %s\n' "$title" >&2
@@ -263,6 +369,9 @@ aero7_error_screen() {
 }
 
 aero7_summary() {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    return 0
+  fi
   aero7_ui_quiet && return 0
   cat <<'EOF'
 Aero7-shell will install and configure a Plasma Wayland desktop inspired by Windows 7 Ultimate.

@@ -39,9 +39,25 @@ aero7_log_or_print() {
   fi
 }
 
+aero7_tui_emit_failure_once() {
+  local message="$*"
+  if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+    aero7_tui_backend &&
+    declare -F aero7_event_session_failed >/dev/null 2>&1 &&
+    [[ "${AERO7_SESSION_FAILED_EMITTED:-0}" != "1" ]]; then
+    AERO7_SESSION_FAILED_EMITTED=1
+    export AERO7_SESSION_FAILED_EMITTED
+    aero7_event_session_failed "$message"
+  fi
+}
+
 aero7_die() {
   local message="$*"
   aero7_log_or_print "ERROR" "$message"
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_tui_emit_failure_once "$message"
+    exit 1
+  fi
   if [[ "${AERO7_DEBUG:-0}" != "1" ]] && declare -F aero7_error_screen >/dev/null 2>&1; then
     aero7_error_screen "$message"
   elif [[ "${AERO7_DEBUG:-0}" != "1" ]]; then
@@ -168,6 +184,12 @@ aero7_print_command_excerpt() {
   local capture="$1"
   local lines="${2:-25}"
   [[ -s "$capture" ]] || {
+  if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+    aero7_tui_backend &&
+    declare -F aero7_event_action_output >/dev/null 2>&1; then
+    aero7_event_action_output "No command output was captured."
+    return 0
+  fi
     if declare -F aero7_detail >/dev/null 2>&1; then
       aero7_detail "No command output was captured."
     else
@@ -175,6 +197,16 @@ aero7_print_command_excerpt() {
     fi
     return 0
   }
+
+  if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+    aero7_tui_backend &&
+    declare -F aero7_event_action_output >/dev/null 2>&1; then
+    aero7_event_action_output "Last output:"
+    tail -n "$lines" "$capture" | while IFS= read -r line; do
+      aero7_event_action_output "$line"
+    done
+    return 0
+  fi
 
   printf '\n    Last output:\n' >&2
   tail -n "$lines" "$capture" | sed 's/^/      /' >&2
@@ -204,12 +236,81 @@ aero7_log_command_capture() {
   } >>"$log" 2>/dev/null || true
 }
 
+aero7_latest_capture_line() {
+  local capture="$1"
+  [[ -s "$capture" ]] || return 0
+  awk 'NF { line=$0 } END { print line }' "$capture" 2>/dev/null | tr -d '\000-\010\013\014\016-\037' | sed 's/[[:space:]][[:space:]]*/ /g; s/^ //; s/ $//'
+}
+
+aero7_run_monitored_capture() {
+  local capture="$1"
+  shift
+  local pid code last_size=0 last_change latest elapsed
+  last_change="$(date +%s)"
+  "$@" >"$capture" 2>&1 &
+  pid="$!"
+  while kill -0 "$pid" 2>/dev/null; do
+    sleep 1
+    if [[ -s "$capture" ]]; then
+      local size
+      size="$(wc -c <"$capture" 2>/dev/null || printf '0')"
+      if [[ "$size" != "$last_size" ]]; then
+        last_size="$size"
+        last_change="$(date +%s)"
+        latest="$(aero7_latest_capture_line "$capture")"
+        if declare -F aero7_event_action_output >/dev/null 2>&1; then
+          aero7_event_action_output "$latest"
+        fi
+      fi
+    fi
+    elapsed=$(($(date +%s) - last_change))
+    if declare -F aero7_event_action_heartbeat >/dev/null 2>&1; then
+      aero7_event_action_heartbeat "$elapsed" "$(aero7_latest_capture_line "$capture")"
+    fi
+  done
+  wait "$pid"
+  code="$?"
+  return "$code"
+}
+
+aero7_run_repeated_monitored_capture() {
+  local capture="$1"
+  local input="$2"
+  shift 2
+  local pid code last_size=0 last_change latest elapsed
+  last_change="$(date +%s)"
+  ( { yes "$input" || true; } | "$@" >"$capture" 2>&1 ) &
+  pid="$!"
+  while kill -0 "$pid" 2>/dev/null; do
+    sleep 1
+    if [[ -s "$capture" ]]; then
+      local size
+      size="$(wc -c <"$capture" 2>/dev/null || printf '0')"
+      if [[ "$size" != "$last_size" ]]; then
+        last_size="$size"
+        last_change="$(date +%s)"
+        latest="$(aero7_latest_capture_line "$capture")"
+        if declare -F aero7_event_action_output >/dev/null 2>&1; then
+          aero7_event_action_output "$latest"
+        fi
+      fi
+    fi
+    elapsed=$(($(date +%s) - last_change))
+    if declare -F aero7_event_action_heartbeat >/dev/null 2>&1; then
+      aero7_event_action_heartbeat "$elapsed" "$(aero7_latest_capture_line "$capture")"
+    fi
+  done
+  wait "$pid"
+  code="$?"
+  return "$code"
+}
+
 aero7_run_command_capture() {
   local label="$1"
   shift
   [[ "$#" -gt 0 ]] || aero7_die "Internal error: command runner called without a command."
 
-  local command_string stage run_user sudo_used stream source_file function_name line_number capture code log
+  local command_string stage run_user sudo_used stream source_file function_name line_number capture code log command_started_at elapsed
   command_string="$(aero7_quote_args "$@")"
   stage="${AERO7_CURRENT_STAGE:-startup}"
   run_user="${AERO7_COMMAND_RUN_USER:-$(id -un 2>/dev/null || printf unknown)}"
@@ -233,6 +334,7 @@ aero7_run_command_capture() {
 
   [[ -z "$label" ]] || aero7_action "$label"
   aero7_log_or_print "INFO" "COMMAND start stage=$stage function=$function_name source=$source_file line=$line_number cwd=$PWD user=$run_user sudo=$sudo_used argv=$command_string"
+  command_started_at="$(date +%s)"
 
   if [[ "${AERO7_DEBUG:-0}" == "1" || "$stream" == "1" ]]; then
     if [[ "${AERO7_DEBUG:-0}" == "1" ]]; then
@@ -252,12 +354,24 @@ aero7_run_command_capture() {
     printf '\n--- command output end (exit %s) ---\n' "$code" >>"$log" 2>/dev/null || true
   else
     capture="$(mktemp "${TMPDIR:-/tmp}/aero7-command.XXXXXX")" || return 1
-    if "$@" >"$capture" 2>&1; then
+    if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+      if aero7_run_monitored_capture "$capture" "$@"; then
+        code=0
+      else
+        code=$?
+      fi
+    elif "$@" >"$capture" 2>&1; then
       code=0
     else
       code=$?
     fi
     aero7_log_command_capture "$capture" "$code" "$command_string" "$stage" "$run_user" "$sudo_used" "$source_file" "$function_name" "$line_number"
+  fi
+  elapsed=$(($(date +%s) - command_started_at))
+  if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+    aero7_tui_backend &&
+    declare -F aero7_event_action_complete >/dev/null 2>&1; then
+    aero7_event_action_complete "$code" "$elapsed"
   fi
 
   if [[ "$code" -eq 0 ]]; then
@@ -278,7 +392,13 @@ aero7_run_command_capture() {
     aero7_print_command_excerpt "$capture" 25
   fi
   if [[ -n "${AERO7_LOG_FILE:-}" ]]; then
-    printf '\n    Full log:\n      %s\n' "$AERO7_LOG_FILE" >&2
+    if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+      aero7_tui_backend &&
+      declare -F aero7_event_action_output >/dev/null 2>&1; then
+      aero7_event_action_output "Full log: $AERO7_LOG_FILE"
+    else
+      printf '\n    Full log:\n      %s\n' "$AERO7_LOG_FILE" >&2
+    fi
   fi
   if [[ -n "${capture:-}" ]]; then
     rm -f -- "$capture"
@@ -299,7 +419,7 @@ aero7_run_with_repeated_input() {
   shift 2
   [[ "$#" -gt 0 ]] || aero7_die "Internal error: piped command runner called without a command."
 
-  local command_string stage run_user sudo_used stream source_file function_name line_number capture code log
+  local command_string stage run_user sudo_used stream source_file function_name line_number capture code log command_started_at elapsed
   local had_errexit=0
   local pipe_status=()
   command_string="yes $(printf '%q' "$input") | $(aero7_quote_args "$@")"
@@ -321,6 +441,7 @@ aero7_run_with_repeated_input() {
 
   [[ -z "$label" ]] || aero7_action "$label"
   aero7_log_or_print "INFO" "COMMAND start stage=$stage function=$function_name source=$source_file line=$line_number cwd=$PWD user=$run_user sudo=$sudo_used argv=$command_string"
+  command_started_at="$(date +%s)"
 
   [[ $- == *e* ]] && {
     had_errexit=1
@@ -345,12 +466,26 @@ aero7_run_with_repeated_input() {
       [[ "$had_errexit" -eq 1 ]] && set -e
       return 1
     }
-    { yes "$input" || true; } | "$@" >"$capture" 2>&1
-    pipe_status=("${PIPESTATUS[@]}")
-    code="${pipe_status[1]:-1}"
+    if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+      if aero7_run_repeated_monitored_capture "$capture" "$input" "$@"; then
+        code=0
+      else
+        code=$?
+      fi
+    else
+      { yes "$input" || true; } | "$@" >"$capture" 2>&1
+      pipe_status=("${PIPESTATUS[@]}")
+      code="${pipe_status[1]:-1}"
+    fi
     aero7_log_command_capture "$capture" "$code" "$command_string" "$stage" "$run_user" "$sudo_used" "$source_file" "$function_name" "$line_number"
   fi
   [[ "$had_errexit" -eq 1 ]] && set -e
+  elapsed=$(($(date +%s) - command_started_at))
+  if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+    aero7_tui_backend &&
+    declare -F aero7_event_action_complete >/dev/null 2>&1; then
+    aero7_event_action_complete "$code" "$elapsed"
+  fi
 
   if [[ "$code" -eq 0 ]]; then
     aero7_log_or_print "INFO" "COMMAND success stage=$stage exit=0 argv=$command_string"
@@ -368,7 +503,13 @@ aero7_run_with_repeated_input() {
     aero7_print_command_excerpt "$capture" 25
   fi
   if [[ -n "${AERO7_LOG_FILE:-}" ]]; then
-    printf '\n    Full log:\n      %s\n' "$AERO7_LOG_FILE" >&2
+    if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+      aero7_tui_backend &&
+      declare -F aero7_event_action_output >/dev/null 2>&1; then
+      aero7_event_action_output "Full log: $AERO7_LOG_FILE"
+    else
+      printf '\n    Full log:\n      %s\n' "$AERO7_LOG_FILE" >&2
+    fi
   fi
   [[ -z "${capture:-}" ]] || rm -f -- "$capture"
   return "$code"
@@ -408,8 +549,14 @@ aero7_sudo_keepalive_start() {
   fi
   (
     while true; do
-      sleep 60
-      sudo -n -v >/dev/null 2>&1 || exit 0
+      sleep "${AERO7_SUDO_KEEPALIVE_INTERVAL:-15}"
+      if ! sudo -n -v >/dev/null 2>&1; then
+        if [[ -n "${AERO7_LOG_FILE:-}" ]]; then
+          printf '[%s] [WARNING] sudo credential keepalive stopped; credentials are no longer cached.\n' \
+            "$(date '+%Y-%m-%d %H:%M:%S')" >>"$AERO7_LOG_FILE" 2>/dev/null || true
+        fi
+        exit 0
+      fi
     done
   ) &
   AERO7_SUDO_KEEPALIVE_PID="$!"

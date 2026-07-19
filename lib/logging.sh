@@ -33,6 +33,12 @@ aero7_log() {
   printf '[%s] [%s] %s\n' "$stamp" "$level" "$message" >>"${AERO7_LOG_FILE:-/dev/null}" 2>/dev/null || true
   case "$level" in
     WARNING)
+      if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+        aero7_tui_backend &&
+        declare -F aero7_event_warning >/dev/null 2>&1; then
+        aero7_event_warning "$message"
+        return 0
+      fi
       if [[ -n "${AERO7_UI_LOADED:-}" ]] && declare -F aero7_warning_line >/dev/null 2>&1; then
         aero7_warning_line "$message" >&2
       else
@@ -66,6 +72,8 @@ aero7_unexpected_error() {
     for ((i = 1; i < ${#FUNCNAME[@]}; i++)); do
       printf '  %s at %s:%s\n' "${FUNCNAME[$i]}" "${BASH_SOURCE[$i]:-unknown}" "${BASH_LINENO[$((i - 1))]:-unknown}" >&2
     done
+  elif declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    aero7_tui_emit_failure_once "$message"
   elif declare -F aero7_error_screen >/dev/null 2>&1; then
     aero7_error_screen "$message"
   else

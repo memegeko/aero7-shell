@@ -15,6 +15,14 @@ aero7_confirm() {
     return $?
   fi
 
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    if declare -F aero7_event_action_output >/dev/null 2>&1; then
+      aero7_event_action_output "Prompt defaulted to $default: $prompt"
+    fi
+    [[ "$default" == "yes" ]]
+    return $?
+  fi
+
   while true; do
     if [[ "$default" == "yes" ]]; then
       printf '%s%s%s [Y/n] ' "${AERO7_C_BOLD:-}" "$prompt" "${AERO7_C_RESET:-}"
@@ -37,6 +45,14 @@ aero7_prompt_layout_choice() {
   fi
 
   if aero7_non_interactive; then
+    printf 'keep\n'
+    return 0
+  fi
+
+  if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+    if declare -F aero7_event_action_output >/dev/null 2>&1; then
+      aero7_event_action_output "Layout prompt defaulted to keep."
+    fi
     printf 'keep\n'
     return 0
   fi

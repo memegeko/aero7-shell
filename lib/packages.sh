@@ -66,7 +66,15 @@ aero7_pacman_install_needed() {
 
   if [[ "${#unavailable[@]}" -gt 0 ]]; then
     aero7_fail "Unavailable pacman package(s)"
-    printf '      %s\n' "${unavailable[@]}" >&2
+    if declare -F aero7_tui_backend >/dev/null 2>&1 &&
+      aero7_tui_backend &&
+      declare -F aero7_event_action_output >/dev/null 2>&1; then
+      for package in "${unavailable[@]}"; do
+        aero7_event_action_output "Unavailable: $package"
+      done
+    else
+      printf '      %s\n' "${unavailable[@]}" >&2
+    fi
     return 1
   fi
 
