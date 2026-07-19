@@ -26,6 +26,7 @@ master_fd, slave_fd = pty.openpty()
 fcntl.ioctl(slave_fd, termios.TIOCSWINSZ, struct.pack("HHHH", 30, 100, 0, 0))
 
 env = os.environ.copy()
+env.pop("CI", None)
 env.update(
     {
         "TERM": "xterm-256color",

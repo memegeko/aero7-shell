@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-AERO7_REPOSITORY="${AERO7_REPOSITORY:-memegeko/aero_desktop}"
+AERO7_REPOSITORY="${AERO7_REPOSITORY:-memegeko/aero7-shell}"
 AERO7_REF="${AERO7_REF:-${AERO7_BRANCH:-main}}"
 AERO7_VERSION="${AERO7_VERSION:-}"
 AERO7_REQUIRE_CHECKSUM="${AERO7_REQUIRE_CHECKSUM:-0}"
@@ -82,7 +82,7 @@ normal_user="${SUDO_USER:-$(id -un)}"
 
 tmp_dir="$(mktemp -d)"
 # Invoked by the EXIT trap below.
-# shellcheck disable=SC2329
+# shellcheck disable=SC2329,SC2317
 cleanup() {
   if [[ -n "${tmp_dir:-}" && "$tmp_dir" == /tmp/* ]]; then
     rm -rf -- "$tmp_dir"

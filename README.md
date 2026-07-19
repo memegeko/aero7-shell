@@ -1,7 +1,7 @@
 # Aero7-shell
 
-[![syntax](https://github.com/memegeko/aero_desktop/actions/workflows/syntax.yml/badge.svg)](https://github.com/memegeko/aero_desktop/actions/workflows/syntax.yml)
-[![shellcheck](https://github.com/memegeko/aero_desktop/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/memegeko/aero_desktop/actions/workflows/shellcheck.yml)
+[![syntax](https://github.com/memegeko/aero7-shell/actions/workflows/syntax.yml/badge.svg)](https://github.com/memegeko/aero7-shell/actions/workflows/syntax.yml)
+[![shellcheck](https://github.com/memegeko/aero7-shell/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/memegeko/aero7-shell/actions/workflows/shellcheck.yml)
 
 **Aero7-shell is an independent project and is not affiliated with or endorsed by Microsoft Corporation. Windows is a trademark of the Microsoft group of companies.**
 
@@ -29,13 +29,13 @@ Aero7-shell does not partition disks, install Arch Linux, replace the bootloader
 One-line install from the current GitHub `main` branch:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero_desktop/main/bootstrap.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/main/bootstrap.sh)"
 ```
 
 Safer inspect-before-running method:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/memegeko/aero_desktop/main/bootstrap.sh
+curl -fsSLO https://raw.githubusercontent.com/memegeko/aero7-shell/main/bootstrap.sh
 less bootstrap.sh
 bash bootstrap.sh
 ```
@@ -43,7 +43,7 @@ bash bootstrap.sh
 For a pinned GitHub Release after one is published:
 
 ```bash
-AERO7_VERSION=v0.1.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero_desktop/main/bootstrap.sh)"
+AERO7_VERSION=v0.1.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/main/bootstrap.sh)"
 ```
 
 For local development:

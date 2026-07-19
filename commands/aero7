@@ -79,8 +79,8 @@ source "$AERO7_PROJECT_ROOT/lib/validation.sh"
 source "$AERO7_PROJECT_ROOT/lib/ownership.sh"
 
 aero7_init_paths
-command="${1:-}"
-if [[ "$command" == "logs" ]]; then
+cmd_name="${1:-}"
+if [[ "$cmd_name" == "logs" ]]; then
   AERO7_LOG_DIR="${AERO7_LOG_DIR:-$AERO7_HOME/.local/state/aero7-shell/logs}"
   export AERO7_LOG_DIR
 else
@@ -278,15 +278,15 @@ aero7_fastfetch_cmd() {
   esac
 }
 
-if [[ -z "$command" ]]; then
+if [[ -z "$cmd_name" ]]; then
   usage
   exit 0
 fi
 shift || true
-AERO7_COMMAND_NAME="$command"
+AERO7_COMMAND_NAME="$cmd_name"
 export AERO7_COMMAND_NAME
 
-case "$command" in
+case "$cmd_name" in
   status) aero7_status_cmd ;;
   doctor) aero7_doctor ;;
   update) exec "$AERO7_PROJECT_ROOT/update.sh" "$@" ;;
@@ -333,5 +333,5 @@ case "$command" in
   fastfetch) aero7_fastfetch_cmd "$@" ;;
   wine) aero7_wine_cmd "$@" ;;
   --help|-h|help) usage ;;
-  *) aero7_die "Unknown command: $command" ;;
+  *) aero7_die "Unknown command: $cmd_name" ;;
 esac

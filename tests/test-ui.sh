@@ -15,7 +15,8 @@ cleanup() {
 trap cleanup EXIT
 
 export AERO7_PROJECT_ROOT="$repo"
-export AERO7_USER="$(id -un)"
+AERO7_USER="$(id -un)"
+export AERO7_USER
 export AERO7_HOME="$tmp/home"
 export AERO7_LOG_DIR="$tmp/logs"
 export AERO7_DRY_RUN=0
@@ -62,7 +63,7 @@ install_dir="$tmp/install"
 mkdir -p "$install_dir"
 AERO7_USER_STATE_DIR="$install_dir/state" \
 AERO7_LOG_DIR="$install_dir/logs" \
-AERO7_LOG_FILE= \
+AERO7_LOG_FILE='' \
 TERM=dumb \
 "$repo/install.sh" --dry-run --non-interactive --no-reboot --plain \
   >"$install_dir/plain.out" 2>"$install_dir/plain.err" || fail "plain dry-run failed"
@@ -84,7 +85,7 @@ default_dir="$install_dir/default"
 mkdir -p "$default_dir"
 AERO7_USER_STATE_DIR="$default_dir/state" \
 AERO7_LOG_DIR="$default_dir/logs" \
-AERO7_LOG_FILE= \
+AERO7_LOG_FILE='' \
 TERM=dumb \
 "$repo/install.sh" --dry-run --no-reboot --plain \
   >"$default_dir/default.out" 2>"$default_dir/default.err" || fail "default dry-run failed"
@@ -94,7 +95,7 @@ grep -q '^kept$' "$default_dir/state/dry-run/state/options/layout" || fail "defa
 
 AERO7_USER_STATE_DIR="$install_dir/quiet-state" \
 AERO7_LOG_DIR="$install_dir/quiet-logs" \
-AERO7_LOG_FILE= \
+AERO7_LOG_FILE='' \
 TERM=dumb \
 "$repo/install.sh" --dry-run --non-interactive --no-reboot --plain --quiet \
   >"$install_dir/quiet.out" 2>"$install_dir/quiet.err" || fail "quiet dry-run failed"
@@ -107,7 +108,7 @@ debug_dir="$install_dir/debug"
 mkdir -p "$debug_dir"
 AERO7_USER_STATE_DIR="$debug_dir/state" \
 AERO7_LOG_DIR="$debug_dir/logs" \
-AERO7_LOG_FILE= \
+AERO7_LOG_FILE='' \
 TERM=dumb \
 "$repo/install.sh" --dry-run --non-interactive --no-reboot --plain --debug \
   >"$debug_dir/debug.out" 2>"$debug_dir/debug.err" || fail "debug dry-run failed"
@@ -119,7 +120,7 @@ mkdir -p "$no_color_dir"
 NO_COLOR=1 \
 AERO7_USER_STATE_DIR="$no_color_dir/state" \
 AERO7_LOG_DIR="$no_color_dir/logs" \
-AERO7_LOG_FILE= \
+AERO7_LOG_FILE='' \
 TERM=xterm-256color \
 "$repo/install.sh" --dry-run --non-interactive --no-reboot --no-color \
   >"$no_color_dir/no-color.out" 2>"$no_color_dir/no-color.err" || fail "NO_COLOR dry-run failed"
@@ -132,7 +133,7 @@ mkdir -p "$ci_dir"
 CI=true \
 AERO7_USER_STATE_DIR="$ci_dir/state" \
 AERO7_LOG_DIR="$ci_dir/logs" \
-AERO7_LOG_FILE= \
+AERO7_LOG_FILE='' \
 TERM=xterm-256color \
 "$repo/install.sh" --dry-run --non-interactive --no-reboot \
   >"$ci_dir/ci.out" 2>"$ci_dir/ci.err" || fail "CI dry-run failed"
@@ -165,7 +166,7 @@ status_output="$(
   env -u AERO7_PROJECT_ROOT \
     AERO7_HOME="$mgmt_dir/home" \
     AERO7_LOG_DIR="$mgmt_dir/status-logs" \
-    AERO7_LOG_FILE= \
+    AERO7_LOG_FILE='' \
     AERO7_USER_STATE_DIR="$mgmt_dir/state" \
     TERM=dumb \
     "$repo/commands/aero7" --plain status
@@ -177,7 +178,7 @@ apps_output="$(
   env -u AERO7_PROJECT_ROOT \
     AERO7_HOME="$mgmt_dir/home" \
     AERO7_LOG_DIR="$mgmt_dir/apps-logs" \
-    AERO7_LOG_FILE= \
+    AERO7_LOG_FILE='' \
     AERO7_USER_STATE_DIR="$mgmt_dir/state" \
     TERM=dumb \
     "$repo/commands/aero7" --plain apps status
@@ -189,7 +190,7 @@ plymouth_output="$(
   env -u AERO7_PROJECT_ROOT \
     AERO7_HOME="$mgmt_dir/home" \
     AERO7_LOG_DIR="$mgmt_dir/plymouth-logs" \
-    AERO7_LOG_FILE= \
+    AERO7_LOG_FILE='' \
     AERO7_USER_STATE_DIR="$mgmt_dir/state" \
     TERM=dumb \
     "$repo/commands/aero7" --plain plymouth status
