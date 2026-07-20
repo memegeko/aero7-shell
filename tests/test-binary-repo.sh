@@ -75,6 +75,14 @@ aero7_binary_repo_install_packages >/dev/null
 [[ "$(aero7_state_get aero_packages_origin)" == "binary" ]] || fail "binary install did not record binary origin"
 [[ "$(aero7_state_unique_file package_origin | wc -l | tr -d ' ')" -eq 8 ]] || fail "binary install did not record all package origins"
 
+(
+  export AERO7_DRY_RUN=1
+  export AERO7_STATE_ROOT_OVERRIDE="$tmp/load-config-state"
+  unset AERO7_BINARY_REPOSITORY_NAME
+  aero7_binary_repo_install_packages >/dev/null
+  [[ "${AERO7_BINARY_REPOSITORY_NAME:-}" == "aero7" ]] || fail "binary install did not load repository config"
+)
+
 export AERO7_NON_INTERACTIVE=1
 export AERO7_ALLOW_SOURCE_FALLBACK=0
 if aero7_source_fallback_allowed_or_prompt; then

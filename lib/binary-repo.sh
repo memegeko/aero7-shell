@@ -190,6 +190,7 @@ aero7_binary_repo_install_packages() {
   local packages=()
   local package args=()
   local needs_conflict_resolution=0
+  aero7_binary_repo_load_config
   mapfile -t packages < <(aero7_binary_repo_packages)
   [[ "${#packages[@]}" -gt 0 ]] || aero7_die "No Aero7 packages configured for binary installation."
   aero7_validate_no_x11_packages_configured "${packages[@]}" || return 1
