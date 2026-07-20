@@ -9,6 +9,7 @@ import json
 import os
 import queue
 import re
+import shlex
 import signal
 import subprocess
 import sys
@@ -26,6 +27,7 @@ STAGE_TITLES = {
     "30-base-dependencies": "Installing base packages",
     "40-plasma-wayland": "Installing Plasma Wayland",
     "50-yay": "Preparing AUR helper",
+    "55-binary-repository": "Configuring binary repository",
     "60-aeroshell": "Installing Aero desktop",
     "70-aero-applications": "Installing applications",
     "80-plasma-layout": "Applying Plasma layout",
@@ -44,8 +46,9 @@ DEFAULT_WEIGHTS = {
     "20-system-update": 7,
     "30-base-dependencies": 10,
     "40-plasma-wayland": 10,
-    "50-yay": 5,
-    "60-aeroshell": 18,
+    "50-yay": 3,
+    "55-binary-repository": 4,
+    "60-aeroshell": 16,
     "70-aero-applications": 14,
     "80-plasma-layout": 5,
     "90-sddm": 5,
@@ -116,7 +119,7 @@ def format_duration(seconds: float) -> str:
 class InstallerState:
     version: str = "0.1.0"
     log_path: str = ""
-    stages_total: int = 15
+    stages_total: int = 16
     current_stage_id: str = ""
     current_stage_title: str = "Waiting for backend"
     current_stage_index: int = 0
@@ -140,6 +143,12 @@ class InstallerState:
     package_total: int = 0
     package_name: str = ""
     cancel_dialog: bool = False
+    completion_dialog: bool = False
+    reboot_required: bool = False
+    reboot_prompt_enabled: bool = False
+    reboot_in_progress: bool = False
+    reboot_error: str = ""
+    exit_requested: bool = False
     view: str = "main"
     follow_log: bool = True
     log_scroll: int = 0
@@ -148,6 +157,13 @@ class InstallerState:
     def stage_progress_percent(self) -> float:
         total = max(1, self.stage_units_total)
         return min(1.0, max(0.0, self.stage_units_current / total))
+
+    def visible_stage_progress_percent(self) -> float:
+        progress = self.stage_progress_percent()
+        if self.package_total > 0 and self.package_current > 0:
+            package_progress = self.package_current / max(1, self.package_total)
+            progress = max(progress, package_progress)
+        return min(1.0, max(0.0, progress))
 
     def overall_percent(self) -> int:
         weight = WEIGHTS.get(self.current_stage_id, 0)
@@ -243,7 +259,7 @@ class Aero7Frontend:
                 self.enqueue({"type": "stage_complete", "id": stage_id, "status": "complete", "title": STAGE_TITLES[stage_id]})
             start_index = 7
         if mode in {"aur-build", "resumed"}:
-            self.enqueue({"type": "stage_start", "id": "60-aeroshell", "index": 7, "total": total, "title": "Installing Aero desktop"})
+            self.enqueue({"type": "stage_start", "id": "60-aeroshell", "index": 8, "total": total, "title": "Installing Aero desktop"})
             packages = [
                 "aeroshell-libplasma-git",
                 "aeroshell-workspace-git",
@@ -282,7 +298,15 @@ class Aero7Frontend:
         if mode == "cancellation":
             self.enqueue({"type": "cancel_requested"})
         else:
-            self.enqueue({"type": "session_complete", "warnings": 1 if mode == "warning" else 0, "reboot_required": False})
+            reboot_required = mode == "success" or os.environ.get("AERO7_TUI_DEMO_REBOOT") == "1"
+            self.enqueue(
+                {
+                    "type": "session_complete",
+                    "warnings": 1 if mode == "warning" else 0,
+                    "reboot_required": reboot_required,
+                    "reboot_prompt_enabled": reboot_required,
+                }
+            )
 
     def handle_event(self, event: dict[str, Any]) -> None:
         typ = event.get("type")
@@ -299,6 +323,9 @@ class Aero7Frontend:
             self.state.stages_total = int(event.get("total", self.state.stages_total))
             self.state.stage_units_current = 0
             self.state.stage_units_total = 1
+            self.state.package_current = 0
+            self.state.package_total = 0
+            self.state.package_name = ""
             self.state.timeline[stage_id] = "active"
             self.state.action_started_at = now
         elif typ == "stage_progress":
@@ -348,7 +375,9 @@ class Aero7Frontend:
             self.state.completed_weight = 100
             self.state.action_title = "Installation flow completed"
             self.state.action_phase = "complete"
-            self.stop_event.set()
+            self.state.reboot_required = bool(event.get("reboot_required", False))
+            self.state.reboot_prompt_enabled = bool(event.get("reboot_prompt_enabled", self.state.reboot_required))
+            self.state.completion_dialog = True
         elif typ == "session_failed":
             self.state.status = "failed"
             self.state.failure_message = sanitize(event.get("message", "Installation failed"))
@@ -401,10 +430,12 @@ class Aero7Frontend:
             key = self.get_key()
             if key is not None:
                 self.handle_key(key)
+            if self.state.exit_requested:
+                break
             if self.state.status in {"complete", "failed", "cancelled"}:
                 if final_seen_at is None:
                     final_seen_at = time.monotonic()
-                if time.monotonic() - final_seen_at > float(os.environ.get("AERO7_TUI_EXIT_DELAY", "1.5")):
+                if self.state.status != "complete" and time.monotonic() - final_seen_at > float(os.environ.get("AERO7_TUI_EXIT_DELAY", "1.5")):
                     break
             time.sleep(0.08)
         if self.state.status == "cancelled":
@@ -421,6 +452,9 @@ class Aero7Frontend:
         return key
 
     def handle_key(self, key: int) -> None:
+        if self.state.status == "complete":
+            self.handle_completion_key(key)
+            return
         if self.state.cancel_dialog:
             if key in (ord("c"), ord("C"), ord("q"), ord("Q"), 10, 13):
                 self.cancel_backend()
@@ -456,6 +490,59 @@ class Aero7Frontend:
             elif key == curses.KEY_END:
                 self.state.follow_log = True
 
+    def handle_completion_key(self, key: int) -> None:
+        if self.state.reboot_in_progress:
+            return
+        if self.state.reboot_required and self.state.reboot_prompt_enabled:
+            if key in (ord("y"), ord("Y")):
+                self.request_reboot()
+            elif key in (ord("n"), ord("N"), ord("q"), ord("Q"), 10, 13, 27):
+                self.state.exit_requested = True
+            return
+        if key in (ord("q"), ord("Q"), 10, 13, 27):
+            self.state.exit_requested = True
+
+    def request_reboot(self) -> None:
+        self.state.reboot_in_progress = True
+        self.state.reboot_error = ""
+        self.state.action_title = "Rebooting now"
+        self.state.action_phase = "sending reboot command"
+
+        if self.args.demo:
+            self.state.live_log.append("reboot: demo mode, no command executed")
+            self.state.exit_requested = True
+            return
+
+        command_text = os.environ.get("AERO7_TUI_REBOOT_COMMAND", "sudo -n systemctl reboot")
+        try:
+            command = shlex.split(command_text)
+            if not command:
+                raise ValueError("empty reboot command")
+            result = subprocess.run(
+                command,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
+            self.state.reboot_in_progress = False
+            self.state.reboot_error = sanitize(str(exc), 120)
+            self.state.action_phase = "reboot command failed"
+            return
+
+        output = sanitize((result.stderr or result.stdout or "").strip(), 160)
+        if result.returncode == 0:
+            self.state.live_log.append("reboot: command accepted")
+            self.state.exit_requested = True
+            return
+
+        self.state.reboot_in_progress = False
+        self.state.reboot_error = output or f"command exited with {result.returncode}"
+        self.state.action_phase = "reboot command failed"
+
     def cancel_backend(self) -> None:
         if self.backend and self.backend.poll() is None:
             self.backend.send_signal(signal.SIGINT)
@@ -484,7 +571,9 @@ class Aero7Frontend:
             self.draw_help(rows, cols)
         else:
             self.draw_main(rows, cols)
-        if self.state.cancel_dialog:
+        if self.state.completion_dialog:
+            self.draw_completion_dialog(rows, cols)
+        elif self.state.cancel_dialog:
             self.draw_cancel_dialog(rows, cols)
         stdscr.refresh()
 
@@ -520,7 +609,13 @@ class Aero7Frontend:
         self.stdscr.attroff(title_attr)
         self.add_raw(1, 0, "─" * (cols - 1), self.pair(2))
         self.add_raw(rows - 3, 0, "─" * (cols - 1), self.pair(2))
-        footer = "  D Details    L Live log    W Warnings    H Help    Q Cancel safely  "
+        if self.state.status == "complete":
+            if self.state.reboot_required and self.state.reboot_prompt_enabled:
+                footer = "  Y Reboot now    N Reboot later  "
+            else:
+                footer = "  Enter Close    Q Close  "
+        else:
+            footer = "  D Details    L Live log    W Warnings    H Help    Q Cancel safely  "
         self.add_raw(rows - 2, 0, footer.ljust(cols - 1), self.pair(1))
 
     def draw_progress_bar(self, y: int, x: int, width: int, percent: float, active: bool = False) -> None:
@@ -575,7 +670,7 @@ class Aero7Frontend:
             stage_count = f"{self.state.current_stage_index or 0} of {self.state.stages_total}"
             self.add(y + 6, left, self.state.current_stage_title, curses.A_BOLD)
             self.add(y + 6, left + width - len(stage_count) - 2, stage_count)
-            self.draw_flat_progress_bar(y + 7, left, width - 4, self.state.stage_progress_percent())
+            self.draw_flat_progress_bar(y + 7, left, width - 4, self.state.visible_stage_progress_percent())
             self.add(y + 9, left, "Current operation", curses.A_BOLD)
             self.add(y + 10, left, self.state.action_title)
             spinner = self.spinner[int(time.monotonic() * 5) % len(self.spinner)]
@@ -603,7 +698,7 @@ class Aero7Frontend:
         stage_count = f"{self.state.current_stage_index or 0} of {self.state.stages_total}"
         self.add(y, left, stage_label, curses.A_BOLD)
         self.add(y, left + width - len(stage_count) - 2, stage_count)
-        self.draw_progress_bar(y + 1, left, width - 4, self.state.stage_progress_percent())
+        self.draw_progress_bar(y + 1, left, width - 4, self.state.visible_stage_progress_percent())
         y += 5
         self.add(y, left, "Current operation", curses.A_BOLD)
         self.add(y + 1, left, self.state.action_title)
@@ -694,6 +789,39 @@ class Aero7Frontend:
         self.add(y + 5, x + 3, "Cancelling now will stop after the current safe operation.")
         self.add(y + 7, x + 8, "[ Continue installation: Esc ]    [ Cancel safely: Enter ]", self.pair(6) | curses.A_BOLD)
         self.add(y + height - 1, x, "└" + "─" * (width - 2) + "┘", self.pair(5) | curses.A_BOLD)
+
+    def draw_completion_dialog(self, rows: int, cols: int) -> None:
+        width = min(72, cols - 8)
+        height = 11 if self.state.reboot_error else 10
+        y = max(2, rows // 2 - height // 2)
+        x = max(2, cols // 2 - width // 2)
+        border_attr = self.pair(2) | curses.A_BOLD
+        self.add(y, x, "┌" + "─" * (width - 2) + "┐", border_attr)
+        self.add(y + 1, x, "│ Installation complete " + " " * (width - 25) + "│", border_attr)
+        for line_no in range(2, height - 1):
+            self.add(y + line_no, x, "│" + " " * (width - 2) + "│", self.pair(2))
+
+        self.add(y + 3, x + 3, "Aero7-shell has finished the installation flow.")
+        if self.state.reboot_required and self.state.reboot_prompt_enabled:
+            self.add(y + 5, x + 3, "A reboot is recommended so all desktop changes load cleanly.")
+            if self.state.reboot_in_progress:
+                self.add(y + 7, x + 3, "Sending reboot command...", self.pair(2) | curses.A_BOLD)
+            else:
+                self.add(y + 7, x + 3, "Reboot now?", curses.A_BOLD)
+                button_y = y + 8
+                if self.state.reboot_error:
+                    self.add(y + 8, x + 3, "Could not reboot automatically: " + self.state.reboot_error, self.pair(5))
+                    button_y = y + 9
+                self.add(button_y, x + 7, "[ Y Yes, reboot now ]    [ N No, reboot later ]", self.pair(6) | curses.A_BOLD)
+        else:
+            if self.state.reboot_required:
+                self.add(y + 5, x + 3, "A reboot is recommended, but this run will not start it.")
+                self.add(y + 6, x + 3, "Close this screen and reboot manually when ready.")
+            else:
+                self.add(y + 5, x + 3, "No reboot prompt is needed for this run.")
+            self.add(y + 8, x + 12, "[ Enter Close ]", self.pair(6) | curses.A_BOLD)
+
+        self.add(y + height - 1, x, "└" + "─" * (width - 2) + "┘", border_attr)
 
 
 def main() -> int:

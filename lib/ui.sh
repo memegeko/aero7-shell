@@ -175,6 +175,7 @@ aero7_stage_title() {
     30-base-dependencies) printf 'Installing base packages\n' ;;
     40-plasma-wayland) printf 'Installing Plasma Wayland\n' ;;
     50-yay) printf 'Preparing AUR helper\n' ;;
+    55-binary-repository) printf 'Configuring binary repository\n' ;;
     60-aeroshell) printf 'Installing Aero desktop\n' ;;
     70-aero-applications) printf 'Installing applications\n' ;;
     80-plasma-layout) printf 'Applying Plasma layout\n' ;;

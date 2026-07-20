@@ -26,8 +26,8 @@ source "$repo/lib/ui.sh"
 
 events="$tmp/events.jsonl"
 {
-  aero7_event_session_start 15
-  aero7_stage_banner 60-aeroshell 7 15
+  aero7_event_session_start 16
+  aero7_stage_banner 60-aeroshell 8 16
   aero7_progress_item 4 8 aeroshell-libplasma-git
   aero7_warning_line 'password=secret-token should be frontend-sanitized'
   aero7_event_action_complete 0 12

@@ -10,6 +10,12 @@ Only assets listed here may be distributed by Aero7-shell.
 | `assets/wallpapers/aero_bg_2.jpeg` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero_bg_3.jpg` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
 
+## Documentation Screenshots
+
+Files under `docs/screenshots/` are VM screenshots for documentation only. They are not installed by Aero7-shell and must not be copied into `assets/` or used as reusable artwork.
+
+Screenshots may show third-party desktop theme components, application UI, and trademarked references for descriptive purposes. The project legal and trademark notice still applies.
+
 ## Removed / Excluded Assets
 
 The following local asset types are not distributed and must not be committed:

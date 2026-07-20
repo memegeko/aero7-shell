@@ -11,6 +11,8 @@ export AERO7_DRY_RUN=1
 source "$repo/lib/common.sh"
 source "$repo/lib/state.sh"
 source "$repo/lib/packages.sh"
+source "$repo/lib/repository-key.sh"
+source "$repo/lib/binary-repo.sh"
 source "$repo/lib/aur.sh"
 source "$repo/lib/applications.sh"
 source "$repo/lib/bootloader.sh"

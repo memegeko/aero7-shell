@@ -12,7 +12,7 @@ Aero7-shell keeps installation logic in Bash and renders the normal interactive 
 
 ## Bootstrap
 
-Minimal Arch systems may not have Python yet. Before launching curses, `install.sh` may show a tiny loader, validate sudo, install the `python` package, and then relaunch into the frontend. Once Python is available, the stage flow is rendered by `ui/aero7_setup.py`.
+Minimal Arch systems may not have Python yet. Before launching curses, `install.sh` shows a styled sudo preflight screen, installs the `python` package if needed, and then launches the frontend. Once Python is available, the stage flow is rendered by `ui/aero7_setup.py`.
 
 ## Backend Protocol
 
@@ -42,5 +42,6 @@ Stage weights live in `config/stage-weights.conf` and must sum to 100.
 - overall and current-stage progress
 - current operation and live activity heartbeat
 - Details, Live Log, Warnings, Help, and safe cancellation dialog
+- final completion dialog with an in-screen reboot-now / reboot-later decision
 
 Installation stages should not draw terminal UI directly. They should call shared helpers such as `aero7_action`, `aero7_detail`, `aero7_progress_item`, `aero7_warn`, and `aero7_ok`.

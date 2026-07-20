@@ -68,6 +68,8 @@ source "$AERO7_PROJECT_ROOT/lib/prompts.sh"
 source "$AERO7_PROJECT_ROOT/lib/state.sh"
 source "$AERO7_PROJECT_ROOT/lib/backup.sh"
 source "$AERO7_PROJECT_ROOT/lib/packages.sh"
+source "$AERO7_PROJECT_ROOT/lib/repository-key.sh"
+source "$AERO7_PROJECT_ROOT/lib/binary-repo.sh"
 source "$AERO7_PROJECT_ROOT/lib/aur.sh"
 source "$AERO7_PROJECT_ROOT/lib/systemd.sh"
 source "$AERO7_PROJECT_ROOT/lib/bootloader.sh"
@@ -102,6 +104,7 @@ Commands:
   logs
   version
   apps [status|install <name>|remove <name>]
+  repo [status|enable|disable|key|fingerprint|packages|refresh|doctor]
   layout [apply|restore]
   plymouth [status|repair]
   fastfetch [--install-default|--restore]
@@ -303,6 +306,7 @@ case "$cmd_name" in
   logs) aero7_logs_cmd "$@" ;;
   version) printf '%s\n' "$AERO7_VERSION" ;;
   apps) aero7_apps_cmd "$@" ;;
+  repo) aero7_repo_cmd "$@" ;;
   layout)
     case "${1:-}" in
       apply) aero7_apply_plasma_layout ;;

@@ -28,6 +28,8 @@ AERO7_INSTALL_SEVULET="ask"
 AERO7_RESTART_STAGE=""
 AERO7_SKIP_STAGES=()
 AERO7_REBOOT="ask"
+AERO7_PACKAGE_MODE="${AERO7_PACKAGE_MODE:-auto}"
+AERO7_ALLOW_SOURCE_FALLBACK="${AERO7_ALLOW_SOURCE_FALLBACK:-0}"
 
 usage() {
   cat <<EOF
@@ -53,6 +55,10 @@ Options:
   --restart-stage STAGE  Restart from a specific stage id
   --skip-stage STAGE     Skip a specific stage id
   --no-reboot            Never prompt to reboot
+  --binary-packages      Require signed Aero7 binary packages
+  --source-build         Build Aero packages from AUR source recipes
+  --allow-source-fallback
+                          Allow AUR source build fallback if binary packages fail
   --replace-layout       Apply the full Aero7-shell Plasma layout
   --keep-layout          Keep current Plasma layout
   --install-winxplorer   Include optional WinXplorer recipe if available
@@ -94,6 +100,9 @@ while [[ "$#" -gt 0 ]]; do
       AERO7_SKIP_STAGES+=("$1")
       ;;
     --no-reboot) AERO7_NO_REBOOT=1; AERO7_REBOOT=no ;;
+    --binary-packages) AERO7_PACKAGE_MODE=binary ;;
+    --source-build) AERO7_PACKAGE_MODE=source ;;
+    --allow-source-fallback) AERO7_ALLOW_SOURCE_FALLBACK=1 ;;
     --replace-layout) AERO7_REPLACE_LAYOUT=yes ;;
     --keep-layout) AERO7_REPLACE_LAYOUT=no ;;
     --install-winxplorer) AERO7_INSTALL_WINXPLORER=yes ;;
@@ -109,7 +118,7 @@ export AERO7_ASSUME_YES AERO7_NON_INTERACTIVE AERO7_DRY_RUN AERO7_DEBUG
 export AERO7_NO_COLOR AERO7_PLAIN AERO7_QUIET AERO7_TUI
 export AERO7_RESUME AERO7_NO_REBOOT AERO7_REPLACE_LAYOUT
 export AERO7_INSTALL_WINXPLORER AERO7_INSTALL_SEVULET AERO7_REBOOT
-export AERO7_BACKEND_RUN
+export AERO7_PACKAGE_MODE AERO7_ALLOW_SOURCE_FALLBACK AERO7_BACKEND_RUN
 
 if [[ "$AERO7_DEBUG" == "1" ]]; then
   export PS4='+ ${BASH_SOURCE##*/}:${LINENO}:${FUNCNAME[0]:-main}:stage=${AERO7_CURRENT_STAGE:-startup}: '
@@ -132,6 +141,10 @@ source "$AERO7_PROJECT_ROOT/lib/state.sh"
 source "$AERO7_PROJECT_ROOT/lib/backup.sh"
 # shellcheck source=lib/packages.sh
 source "$AERO7_PROJECT_ROOT/lib/packages.sh"
+# shellcheck source=lib/repository-key.sh
+source "$AERO7_PROJECT_ROOT/lib/repository-key.sh"
+# shellcheck source=lib/binary-repo.sh
+source "$AERO7_PROJECT_ROOT/lib/binary-repo.sh"
 # shellcheck source=lib/aur.sh
 source "$AERO7_PROJECT_ROOT/lib/aur.sh"
 # shellcheck source=lib/systemd.sh
@@ -168,6 +181,9 @@ build_backend_args() {
   [[ "$AERO7_NO_REBOOT" == "1" ]] && args+=(--no-reboot)
   [[ "$AERO7_RESUME" == "1" ]] && args+=(--resume)
   [[ "$AERO7_INTERACTIVE_REQUESTED" == "1" ]] && args+=(--interactive)
+  [[ "$AERO7_PACKAGE_MODE" == "binary" ]] && args+=(--binary-packages)
+  [[ "$AERO7_PACKAGE_MODE" == "source" ]] && args+=(--source-build)
+  [[ "$AERO7_ALLOW_SOURCE_FALLBACK" == "1" ]] && args+=(--allow-source-fallback)
   [[ "$AERO7_REPLACE_LAYOUT" == "yes" ]] && args+=(--replace-layout)
   [[ "$AERO7_REPLACE_LAYOUT" == "no" ]] && args+=(--keep-layout)
   [[ "$AERO7_INSTALL_WINXPLORER" == "yes" ]] && args+=(--install-winxplorer)
@@ -197,12 +213,10 @@ if [[ "$AERO7_BACKEND_RUN" != "1" ]]; then
       printf 'TUI unavailable: %s\n' "${ui_mode#plain:}" >&2
       exit 1
     fi
-    aero7_tui_bootstrap_python_if_needed
     if ! aero7_dry_run; then
-      printf 'Aero7-shell Setup\n'
-      printf 'Validating sudo before starting the full-screen installer...\n'
-      sudo -v || aero7_die "Could not validate sudo credentials."
+      aero7_tui_validate_sudo || aero7_die "Could not validate sudo credentials."
     fi
+    aero7_tui_bootstrap_python_if_needed
     mapfile -d '' -t backend_args < <(build_backend_args)
     aero7_launch_tui --backend "$AERO7_PROJECT_ROOT/install.sh" "${backend_args[@]/#/--backend-arg=}"
     exit $?
@@ -224,6 +238,7 @@ stage_files=(
   "$AERO7_STAGE_DIR/30-base-dependencies.sh"
   "$AERO7_STAGE_DIR/40-plasma-wayland.sh"
   "$AERO7_STAGE_DIR/50-yay.sh"
+  "$AERO7_STAGE_DIR/55-binary-repository.sh"
   "$AERO7_STAGE_DIR/60-aeroshell.sh"
   "$AERO7_STAGE_DIR/70-aero-applications.sh"
   "$AERO7_STAGE_DIR/80-plasma-layout.sh"
@@ -361,8 +376,12 @@ if declare -F aero7_tui_backend >/dev/null 2>&1 &&
   declare -F aero7_event_session_complete >/dev/null 2>&1; then
   warnings="$(aero7_state_count_unique warnings 2>/dev/null || printf '0')"
   reboot_required=false
-  if [[ "$(aero7_state_get reboot_recommended 2>/dev/null || printf 'no')" == "yes" ]]; then
+  reboot_prompt_enabled=false
+  if [[ "$AERO7_NO_REBOOT" != "1" && "$(aero7_state_get reboot_recommended 2>/dev/null || printf 'no')" == "yes" ]]; then
     reboot_required=true
+    if [[ "$(aero7_state_get reboot_prompt_allowed 2>/dev/null || printf 'no')" == "yes" ]]; then
+      reboot_prompt_enabled=true
+    fi
   fi
-  aero7_event_session_complete "$warnings" "$reboot_required"
+  aero7_event_session_complete "$warnings" "$reboot_required" "$reboot_prompt_enabled"
 fi
