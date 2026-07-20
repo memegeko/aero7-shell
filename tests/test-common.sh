@@ -53,7 +53,10 @@ preferred_wallpaper="$(aero7_preferred_wallpaper_source)"
 ! aero7_wallpaper_is_allowed "$repo/assets/wallpapers/README.md" || fail "wallpaper README was allowed as an installable wallpaper"
 for wallpaper in "$repo"/assets/wallpapers/aero_bg_1.png "$repo"/assets/wallpapers/aero_bg_2.jpeg "$repo"/assets/wallpapers/aero_bg_3.jpg; do
   aero7_wallpaper_is_allowed "$wallpaper" || fail "approved wallpaper was rejected: $wallpaper"
+  kde_path="$(aero7_wallpaper_kde_image_path "$wallpaper")" || fail "approved wallpaper has no KDE package path: $wallpaper"
+  [[ "$kde_path" == /usr/share/wallpapers/Aero7Shell*/contents/images/* ]] || fail "unexpected KDE wallpaper package path: $kde_path"
 done
+[[ "$(aero7_wallpaper_package_field "$repo/assets/wallpapers/aero_bg_1.png" name)" == "Aero7-shell Default" ]] || fail "default wallpaper package name changed"
 ! aero7_wallpaper_is_allowed "$repo/assets/wallpapers/windows-original.jpg" || fail "unapproved wallpaper was allowed"
 aero7_avatar_is_allowed "$repo/assets/avatars/aero7-user.png" || fail "safe avatar was rejected"
 ! aero7_avatar_is_allowed "$repo/assets/avatars/usertile10.bmp" || fail "Windows usertile avatar was allowed"
