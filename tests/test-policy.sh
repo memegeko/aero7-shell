@@ -113,6 +113,63 @@ Exec=startatp-wayland
 EOF
 [[ "$(aero7_find_atp_wayland_session)" == "aerothemeplasma.desktop" ]] || fail "AeroThemePlasma Wayland session was not detected"
 
+mkdir -p "$root/usr/share/plasma/look-and-feel/authui7"
+cat >"$root/usr/share/plasma/look-and-feel/authui7/metadata.json" <<'EOF'
+{
+  "KPackageStructure": "Plasma/LookAndFeel",
+  "KPlugin": {
+    "Id": "authui7",
+    "Name": "Windows 7 style"
+  }
+}
+EOF
+mkdir -p "$root/usr/share/color-schemes"
+cat >"$root/usr/share/color-schemes/Aero.colors" <<'EOF'
+[General]
+Name=Aero
+ColorScheme=BreezeClassic
+EOF
+mkdir -p "$root/usr/share/icons/Windows 7 Aero" "$root/usr/share/icons/aero-drop"
+mkdir -p "$root/usr/share/Kvantum/Windows7Aero"
+touch "$root/usr/share/Kvantum/Windows7Aero/Windows7Aero.kvconfig"
+mkdir -p "$root/usr/share/plasma/desktoptheme/Seven-Black"
+touch "$root/usr/share/plasma/desktoptheme/Seven-Black/metadata.json"
+[[ "$(aero7_find_lookandfeel_package)" == "authui7" ]] || fail "AeroThemePlasma look-and-feel package was not detected"
+[[ "$(aero7_find_color_scheme)" == "Aero" ]] || fail "Aero color scheme was not detected"
+[[ "$(aero7_find_icon_theme)" == "Windows 7 Aero" ]] || fail "Aero icon theme was not detected"
+[[ "$(aero7_find_cursor_theme)" == "aero-drop" ]] || fail "Aero cursor theme was not detected"
+[[ "$(aero7_find_kvantum_theme)" == "Windows7Aero" ]] || fail "Aero Kvantum theme was not detected"
+[[ "$(aero7_find_plasma_desktop_theme)" == "Seven-Black" ]] || fail "Aero Plasma desktop theme was not detected"
+
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_TEST_ROOT="$root"
+  unset DISPLAY WAYLAND_DISPLAY
+  write_log="$tmp/plasma-preseed.log"
+  aero7_have() { [[ "$1" == "kwriteconfig6" ]]; }
+  aero7_user_run() { printf '%s\n' "$*" >>"$write_log"; }
+  aero7_apply_plasma_theme >/dev/null
+  grep -Fq -- '--file kdeglobals --group KDE --key LookAndFeelPackage authui7' "$write_log" || fail "Plasma preseed did not pin the Aero global theme"
+  grep -Fq -- '--file kdeglobals --group General --key ColorScheme Aero' "$write_log" || fail "Plasma preseed did not pin the Aero color scheme"
+  grep -Fq -- '--file kdeglobals --group KDE --key widgetStyle kvantum' "$write_log" || fail "Plasma preseed did not pin Kvantum as the widget style"
+  grep -Fq -- '--file kvantum.kvconfig --group General --key theme Windows7Aero' "$write_log" || fail "Plasma preseed did not pin the Windows7Aero Kvantum theme"
+  grep -Fq -- '--file plasmarc --group Theme --key name Seven-Black' "$write_log" || fail "Plasma preseed did not pin the upstream desktop theme"
+)
+
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_TEST_ROOT="$root"
+  order_log="$tmp/plasma-apply-order.log"
+  aero7_have() { [[ "$1" == "kwriteconfig6" ]]; }
+  aero7_graphical_session_available() { return 0; }
+  aero7_apply_lookandfeel_id() { printf 'lookandfeel %s\n' "$1" >>"$order_log"; }
+  aero7_apply_atp_session_tools() { printf 'session-tools\n' >>"$order_log"; }
+  aero7_user_run() { printf 'write %s\n' "$*" >>"$order_log"; }
+  aero7_apply_plasma_theme >/dev/null
+  [[ "$(sed -n '1p' "$order_log")" == "lookandfeel authui7" ]] || fail "Plasma global theme was not applied before component preseed"
+  grep -Fq -- 'write kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle kvantum' "$order_log" || fail "Plasma component preseed did not run after global theme apply"
+)
+
 mkdir -p "$root/usr/share/sddm/themes"
 [[ -z "$(aero7_find_sddm_aero_theme || true)" ]] || fail "missing SDDM theme should not resolve"
 mkdir -p "$root/usr/share/sddm/themes/aero7-test"

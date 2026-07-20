@@ -30,6 +30,57 @@ aero7_graphical_session_available() {
   [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]
 }
 
+aero7_existing_dirs() {
+  local dir
+  for dir in "$@"; do
+    [[ -d "$dir" ]] && printf '%s\n' "$dir"
+  done
+}
+
+aero7_theme_user_home() {
+  printf '%s\n' "${AERO7_HOME:-$HOME}"
+}
+
+aero7_lookandfeel_dirs() {
+  local home
+  home="$(aero7_theme_user_home)"
+  aero7_existing_dirs \
+    "$(aero7_plasma_root_path /usr/share/plasma/look-and-feel)" \
+    "$home/.local/share/plasma/look-and-feel"
+}
+
+aero7_color_scheme_dirs() {
+  local home
+  home="$(aero7_theme_user_home)"
+  aero7_existing_dirs \
+    "$(aero7_plasma_root_path /usr/share/color-schemes)" \
+    "$home/.local/share/color-schemes"
+}
+
+aero7_icon_theme_dirs() {
+  local home
+  home="$(aero7_theme_user_home)"
+  aero7_existing_dirs \
+    "$(aero7_plasma_root_path /usr/share/icons)" \
+    "$home/.local/share/icons"
+}
+
+aero7_kvantum_theme_dirs() {
+  local home
+  home="$(aero7_theme_user_home)"
+  aero7_existing_dirs \
+    "$(aero7_plasma_root_path /usr/share/Kvantum)" \
+    "$home/.config/Kvantum"
+}
+
+aero7_plasma_desktop_theme_dirs() {
+  local home
+  home="$(aero7_theme_user_home)"
+  aero7_existing_dirs \
+    "$(aero7_plasma_root_path /usr/share/plasma/desktoptheme)" \
+    "$home/.local/share/plasma/desktoptheme"
+}
+
 aero7_kwriteconfig_user() {
   local args=("$@")
   if ! aero7_have kwriteconfig6; then
@@ -81,14 +132,36 @@ aero7_find_atp_wayland_session() {
 }
 
 aero7_lookandfeel_available() {
-  local id="$1"
-  [[ -d "$(aero7_plasma_root_path "/usr/share/plasma/look-and-feel/$id")" ]] && return 0
+  local id="$1" dir
+  while IFS= read -r dir; do
+    [[ -d "$dir/$id" ]] && return 0
+  done < <(aero7_lookandfeel_dirs)
   if aero7_have plasma-apply-lookandfeel; then
     plasma-apply-lookandfeel --list 2>/dev/null | grep -Fqi "$id" && return 0
   fi
   if aero7_have lookandfeeltool; then
     lookandfeeltool --list 2>/dev/null | grep -Fqi "$id" && return 0
   fi
+  return 1
+}
+
+aero7_find_lookandfeel_package() {
+  local candidate dir metadata
+  for candidate in authui7 org.aerothemeplasma.desktop aerothemeplasma.desktop; do
+    if aero7_lookandfeel_available "$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  while IFS= read -r dir; do
+    while IFS= read -r metadata; do
+      if grep -Eiq '("Name"|^Name=).*(Windows[[:space:]]*7|AeroThemePlasma|Aero)' "$metadata"; then
+        basename -- "$(dirname -- "$metadata")"
+        return 0
+      fi
+    done < <(find "$dir" -mindepth 2 -maxdepth 2 -type f \( -name metadata.json -o -name metadata.desktop \) -print 2>/dev/null | sort)
+  done < <(aero7_lookandfeel_dirs)
   return 1
 }
 
@@ -105,26 +178,181 @@ aero7_apply_lookandfeel_id() {
   return 1
 }
 
+aero7_color_scheme_available() {
+  local name="$1" dir
+  while IFS= read -r dir; do
+    [[ -f "$dir/$name.colors" ]] && return 0
+  done < <(aero7_color_scheme_dirs)
+  return 1
+}
+
+aero7_find_color_scheme() {
+  local candidate dir file base
+  for candidate in Aero Windows7Aero BreezeClassic BreezeLight; do
+    if aero7_color_scheme_available "$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  while IFS= read -r dir; do
+    while IFS= read -r file; do
+      base="$(basename -- "$file" .colors)"
+      case "${base,,}" in
+        *dark*|*black*) continue ;;
+      esac
+      if grep -Eiq '^Name=.*(Aero|Windows[[:space:]]*7|Breeze[[:space:]]*Light|Breeze[[:space:]]*Classic)' "$file"; then
+        printf '%s\n' "$base"
+        return 0
+      fi
+    done < <(find "$dir" -maxdepth 1 -type f -name '*.colors' -print 2>/dev/null | sort)
+  done < <(aero7_color_scheme_dirs)
+  return 1
+}
+
+aero7_icon_theme_available() {
+  local name="$1" dir
+  while IFS= read -r dir; do
+    [[ -d "$dir/$name" ]] && return 0
+  done < <(aero7_icon_theme_dirs)
+  return 1
+}
+
+aero7_find_icon_theme() {
+  local candidate
+  for candidate in "Windows 7 Aero" aerothemeplasma Aero; do
+    if aero7_icon_theme_available "$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+aero7_cursor_theme_available() {
+  local name="$1" dir
+  while IFS= read -r dir; do
+    [[ -d "$dir/$name" ]] && return 0
+  done < <(aero7_icon_theme_dirs)
+  return 1
+}
+
+aero7_find_cursor_theme() {
+  local candidate
+  for candidate in aero-drop aero_arrow aero; do
+    if aero7_cursor_theme_available "$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+aero7_kvantum_theme_available() {
+  local name="$1" dir
+  while IFS= read -r dir; do
+    [[ -f "$dir/$name/$name.kvconfig" || -f "$dir/$name.kvconfig" ]] && return 0
+  done < <(aero7_kvantum_theme_dirs)
+  return 1
+}
+
+aero7_find_kvantum_theme() {
+  local candidate
+  for candidate in Windows7Aero Aero KvCurvesLight KvFlatLight; do
+    if aero7_kvantum_theme_available "$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+aero7_plasma_desktop_theme_available() {
+  local name="$1" dir
+  while IFS= read -r dir; do
+    [[ -d "$dir/$name" ]] && return 0
+  done < <(aero7_plasma_desktop_theme_dirs)
+  return 1
+}
+
+aero7_find_plasma_desktop_theme() {
+  local candidate dir theme
+  for candidate in Seven-Black Seven Aero default breeze-light; do
+    if aero7_plasma_desktop_theme_available "$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  while IFS= read -r dir; do
+    while IFS= read -r theme; do
+      case "$(basename -- "$theme" | tr '[:upper:]' '[:lower:]')" in
+        *dark*|*black*) continue ;;
+      esac
+      if [[ -f "$theme/metadata.json" || -f "$theme/metadata.desktop" ]]; then
+        basename -- "$theme"
+        return 0
+      fi
+    done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | sort)
+  done < <(aero7_plasma_desktop_theme_dirs)
+  return 1
+}
+
 aero7_preseed_atp_user_config() {
   if aero7_dry_run; then
     aero7_info "Would preseed AeroThemePlasma user configuration."
     return 0
   fi
 
+  local lookandfeel color_scheme icon_theme cursor_theme kvantum_theme desktop_theme
+  lookandfeel="$(aero7_find_lookandfeel_package || true)"
+  color_scheme="$(aero7_find_color_scheme || true)"
+  icon_theme="$(aero7_find_icon_theme || true)"
+  cursor_theme="$(aero7_find_cursor_theme || true)"
+  kvantum_theme="$(aero7_find_kvantum_theme || true)"
+  desktop_theme="$(aero7_find_plasma_desktop_theme || true)"
+
   aero7_kwriteconfig_user --file kdeglobals --group Sounds --key Theme "Windows 7" || return 0
   aero7_kwriteconfig_user --file kdeglobals --group General --key AccentColor "0,0,0,0" || true
   aero7_kwriteconfig_user --file kdeglobals --group General --key accentColorFromWallpaper --type bool false || true
-  aero7_kwriteconfig_user --file kdeglobals --group General --key ColorScheme Aero || true
-  aero7_kwriteconfig_user --file kdeglobals --group Icons --key Theme "Windows 7 Aero" || true
+  if [[ -n "$color_scheme" ]]; then
+    aero7_kwriteconfig_user --file kdeglobals --group General --key ColorScheme "$color_scheme" || true
+  else
+    aero7_warn "No light Aero/Plasma color scheme was found to preseed."
+  fi
+  if [[ -n "$lookandfeel" ]]; then
+    aero7_kwriteconfig_user --file kdeglobals --group KDE --key LookAndFeelPackage "$lookandfeel" || true
+  else
+    aero7_warn "No AeroThemePlasma look-and-feel package was found to preseed."
+  fi
+  if [[ -n "$icon_theme" ]]; then
+    aero7_kwriteconfig_user --file kdeglobals --group Icons --key Theme "$icon_theme" || true
+  else
+    aero7_warn "No Aero icon theme was found to preseed."
+  fi
   aero7_kwriteconfig_user --file kdeglobals --group KDE --key widgetStyle kvantum || true
 
-  aero7_kwriteconfig_user --file plasmarc --group Theme --key name Seven-Black || true
+  if [[ -n "$desktop_theme" ]]; then
+    aero7_kwriteconfig_user --file plasmarc --group Theme --key name "$desktop_theme" || true
+  else
+    aero7_warn "No Plasma desktop theme was found to preseed."
+  fi
 
-  aero7_kwriteconfig_user --file kcminputrc --group Mouse --key cursorTheme aero-drop || true
+  if [[ -n "$cursor_theme" ]]; then
+    aero7_kwriteconfig_user --file kcminputrc --group Mouse --key cursorTheme "$cursor_theme" || true
+  else
+    aero7_warn "No Aero cursor theme was found to preseed."
+  fi
   aero7_kwriteconfig_user --file kcminputrc --group Mouse --key cursorSize 32 || true
 
-  aero7_kwriteconfig_user --file kvantum.kvconfig --group General --key theme Windows7Aero || true
-  aero7_kwriteconfig_user --file ksplashrc --group KSplash --key Theme authui7 || true
+  if [[ -n "$kvantum_theme" ]]; then
+    aero7_kwriteconfig_user --file kvantum.kvconfig --group General --key theme "$kvantum_theme" || true
+  else
+    aero7_warn "No Aero Kvantum theme was found to preseed."
+  fi
+  if [[ -n "$lookandfeel" ]]; then
+    aero7_kwriteconfig_user --file ksplashrc --group KSplash --key Theme "$lookandfeel" || true
+  fi
   aero7_kwriteconfig_user --file kscreenlockerrc --group Daemon --key LockGrace 0 || true
   aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key Image "file:///usr/share/sddm/themes/sddm-theme-mod/bgtexture.jpg" || true
   aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key PreviewImage "file:///usr/share/sddm/themes/sddm-theme-mod/bgtexture.jpg" || true
@@ -169,14 +397,26 @@ aero7_apply_atp_session_tools() {
   fi
 
   if aero7_graphical_session_available; then
-    if aero7_have kvantummanager; then
-      aero7_user_run kvantummanager --set Windows7Aero || aero7_warn "Could not apply the Windows7Aero Kvantum theme automatically."
+    local color_scheme desktop_theme cursor_theme kvantum_theme
+    color_scheme="$(aero7_find_color_scheme || true)"
+    desktop_theme="$(aero7_find_plasma_desktop_theme || true)"
+    cursor_theme="$(aero7_find_cursor_theme || true)"
+    kvantum_theme="$(aero7_find_kvantum_theme || true)"
+
+    if [[ -n "$color_scheme" ]] && aero7_have plasma-apply-colorscheme; then
+      aero7_user_run plasma-apply-colorscheme "$color_scheme" || aero7_warn "Could not apply the $color_scheme color scheme automatically."
     fi
-    if aero7_have plasma-apply-cursortheme; then
-      aero7_user_run plasma-apply-cursortheme aero-drop --size 32 || aero7_warn "Could not apply the Aero cursor theme automatically."
+    if [[ -n "$desktop_theme" ]] && aero7_have plasma-apply-desktoptheme; then
+      aero7_user_run plasma-apply-desktoptheme "$desktop_theme" || aero7_warn "Could not apply the $desktop_theme Plasma desktop theme automatically."
+    fi
+    if [[ -n "$kvantum_theme" ]] && aero7_have kvantummanager; then
+      aero7_user_run kvantummanager --set "$kvantum_theme" || aero7_warn "Could not apply the $kvantum_theme Kvantum theme automatically."
+    fi
+    if [[ -n "$cursor_theme" ]] && aero7_have plasma-apply-cursortheme; then
+      aero7_user_run plasma-apply-cursortheme "$cursor_theme" --size 32 || aero7_warn "Could not apply the Aero cursor theme automatically."
     fi
   else
-    aero7_info "No graphical session detected; live Kvantum and cursor apply helpers will take effect from preseeded config at next login."
+    aero7_info "No graphical session detected; live theme helpers will take effect from preseeded config at next login."
   fi
 
   if aero7_have aeroshell_update_default_rules; then
@@ -195,25 +435,23 @@ aero7_apply_plasma_theme() {
     return 0
   fi
 
+  local id found=0 applied=0
+  id="$(aero7_find_lookandfeel_package || true)"
+  if [[ -n "$id" ]]; then
+    found=1
+    if aero7_graphical_session_available; then
+      if aero7_apply_lookandfeel_id "$id"; then
+        applied=1
+      else
+        aero7_warn "Could not apply AeroThemePlasma look-and-feel package: $id"
+      fi
+    else
+      aero7_info "AeroThemePlasma look-and-feel package $id is installed; preseeded config will take effect at next login."
+    fi
+  fi
+
   aero7_preseed_atp_user_config
   aero7_mark_atp_ootb_complete
-
-  local id found=0 applied=0
-  for id in authui7 org.aerothemeplasma.desktop; do
-    if aero7_lookandfeel_available "$id"; then
-      found=1
-      if aero7_graphical_session_available; then
-        if aero7_apply_lookandfeel_id "$id"; then
-          applied=1
-        else
-          aero7_warn "Could not apply AeroThemePlasma look-and-feel package: $id"
-        fi
-      else
-        aero7_info "AeroThemePlasma look-and-feel package $id is installed; preseeded config will take effect at next login."
-      fi
-      break
-    fi
-  done
 
   if [[ "$found" -eq 0 ]]; then
     aero7_warn "No AeroThemePlasma look-and-feel package was available to apply."
