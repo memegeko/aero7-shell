@@ -189,6 +189,7 @@ aero7_binary_repo_prepare() {
 aero7_binary_repo_install_packages() {
   local packages=()
   local package args=()
+  local needs_conflict_resolution=0
   mapfile -t packages < <(aero7_binary_repo_packages)
   [[ "${#packages[@]}" -gt 0 ]] || aero7_die "No Aero7 packages configured for binary installation."
   aero7_validate_no_x11_packages_configured "${packages[@]}" || return 1
@@ -207,6 +208,9 @@ aero7_binary_repo_install_packages() {
   local repo_packages=()
   for package in "${packages[@]}"; do
     repo_packages+=("$AERO7_BINARY_REPOSITORY_NAME/$package")
+    if aero7_aur_needs_conflict_resolution "$package"; then
+      needs_conflict_resolution=1
+    fi
   done
   if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
     local tui_index=0
@@ -227,7 +231,13 @@ aero7_binary_repo_install_packages() {
       aero7_progress_item "$index" "${#packages[@]}" "$package"
     done
   fi
-  aero7_sudo_run pacman -S --needed "${args[@]}" "${repo_packages[@]}"
+  if [[ "$needs_conflict_resolution" -eq 1 ]] &&
+    (aero7_non_interactive || [[ "${AERO7_ASSUME_YES:-0}" == "1" ]]); then
+    AERO7_COMMAND_SUDO=1 AERO7_COMMAND_RUN_USER="root" \
+      aero7_run_with_repeated_input "" y sudo pacman -S --needed "${repo_packages[@]}" || return 1
+  else
+    aero7_sudo_run pacman -S --needed "${args[@]}" "${repo_packages[@]}" || return 1
+  fi
   for package in "${packages[@]}"; do
     aero7_state_append "installed_binary_packages" "$package"
     aero7_state_append "package_origin" "$package=Aero7 signed repository"

@@ -10,7 +10,9 @@ stage_run() {
 }
 
 stage_validate() {
-  aero7_validate_no_x11_packages_configured
+  aero7_validate_no_x11_packages_configured || return 1
+  aero7_dry_run && return 0
+  aero7_configured_pacman_packages_installed "$AERO7_CONFIG_DIR/aur-packages.conf"
 }
 
 stage_rollback() {

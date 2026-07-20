@@ -83,4 +83,41 @@ fi
 export AERO7_ALLOW_SOURCE_FALLBACK=1
 aero7_source_fallback_allowed_or_prompt || fail "explicit source fallback flag was ignored"
 
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_NON_INTERACTIVE=1
+  export AERO7_ASSUME_YES=1
+  export AERO7_BINARY_REPOSITORY_NAME=aero7
+  export AERO7_STATE_ROOT_OVERRIDE="$tmp/binary-fail-state"
+  aero7_binary_repo_packages() { printf '%s\n' aerothemeplasma-desktop-git; }
+  aero7_validate_no_x11_packages_configured() { return 0; }
+  aero7_pacman_install_args() { printf '%s\n' --noconfirm; }
+  aero7_sudo_run() { return 1; }
+  if aero7_binary_repo_install_packages >/dev/null 2>&1; then
+    fail "binary package install reported success after pacman failed"
+  fi
+  [[ ! -e "$AERO7_STATE_ROOT_OVERRIDE/aero_packages_origin" ]] ||
+    fail "failed binary install recorded package origin"
+)
+
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_NON_INTERACTIVE=1
+  export AERO7_ASSUME_YES=1
+  export AERO7_BINARY_REPOSITORY_NAME=aero7
+  export AERO7_STATE_ROOT_OVERRIDE="$tmp/binary-conflict-state"
+  command_log="$tmp/binary-conflict-command.log"
+  aero7_binary_repo_packages() { printf '%s\n' aeroshell-libplasma-git; }
+  aero7_validate_no_x11_packages_configured() { return 0; }
+  aero7_pacman_install_args() { printf '%s\n' --noconfirm; }
+  aero7_sudo_run() { fail "conflict binary install used direct sudo pacman"; }
+  aero7_run_with_repeated_input() {
+    printf '%s\n' "$*" >"$command_log"
+  }
+  aero7_binary_repo_install_packages >/dev/null
+  grep -q 'sudo pacman -S --needed aero7/aeroshell-libplasma-git' "$command_log" ||
+    fail "conflict binary install did not use repeated input pacman"
+  ! grep -q -- '--noconfirm' "$command_log" || fail "conflict binary install kept --noconfirm"
+)
+
 printf 'test-binary-repo: ok\n'

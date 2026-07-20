@@ -294,6 +294,18 @@ EOF
 
 (
   export AERO7_DRY_RUN=0
+  unset -f stage_check stage_run stage_validate stage_rollback
+  # shellcheck source=../stages/60-aeroshell.sh
+  source "$repo/stages/60-aeroshell.sh"
+  aero7_validate_no_x11_packages_configured() { return 0; }
+  aero7_configured_pacman_packages_installed() { return 1; }
+  if stage_validate >/dev/null 2>&1; then
+    fail "Aero desktop stage validation allowed missing packages from stale state"
+  fi
+)
+
+(
+  export AERO7_DRY_RUN=0
   aero7_have() { [[ "$1" == "systemctl" ]]; }
   aero7_systemd_unit_exists() { [[ "$1" == "NetworkManager.service" ]]; }
   aero7_systemctl_is_enabled() { return 0; }
