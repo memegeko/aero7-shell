@@ -194,6 +194,9 @@ aero7_doctor() {
   aero_origin="$(aero7_state_get aero_packages_origin 2>/dev/null || printf 'unknown')"
   case "$aero_origin" in
     binary)
+      if declare -F aero7_binary_repo_load_config >/dev/null 2>&1; then
+        aero7_binary_repo_load_config
+      fi
       if aero7_repository_key_configured; then
         aero7_check_status "Aero package origin: signed repository" "OK"
       else
