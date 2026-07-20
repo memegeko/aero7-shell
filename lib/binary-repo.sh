@@ -8,12 +8,13 @@ AERO7_BINARY_REPO_LOADED=1
 aero7_binary_repo_load_config() {
   AERO7_BINARY_REPOSITORY_NAME="${AERO7_BINARY_REPOSITORY_NAME:-aero7}"
   if [[ -z "${AERO7_BINARY_REPOSITORY_SERVER+x}" ]]; then
+    # shellcheck disable=SC2016
     AERO7_BINARY_REPOSITORY_SERVER='https://memegeko.github.io/aero7-repo/$arch'
   fi
   AERO7_BINARY_REPOSITORY_KEY_FILE="${AERO7_BINARY_REPOSITORY_KEY_FILE:-$AERO7_PROJECT_ROOT/keys/aero7-repository.asc}"
   AERO7_BINARY_REPOSITORY_FINGERPRINT="${AERO7_BINARY_REPOSITORY_FINGERPRINT:-MANUAL_ACTION_REQUIRED}"
   if [[ -r "$AERO7_CONFIG_DIR/binary-repository.conf" ]]; then
-    # shellcheck source=config/binary-repository.conf
+    # shellcheck source=/dev/null
     source "$AERO7_CONFIG_DIR/binary-repository.conf"
   fi
   AERO7_PACMAN_CONF="${AERO7_PACMAN_CONF:-/etc/pacman.conf}"

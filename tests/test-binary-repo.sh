@@ -15,7 +15,8 @@ cleanup() {
 trap cleanup EXIT
 
 export AERO7_PROJECT_ROOT="$repo"
-export AERO7_USER="$(id -un)"
+AERO7_USER="$(id -un)"
+export AERO7_USER
 export AERO7_HOME="$tmp/home"
 export AERO7_USER_STATE_DIR="$tmp/state"
 export AERO7_LOG_DIR="$tmp/logs"
