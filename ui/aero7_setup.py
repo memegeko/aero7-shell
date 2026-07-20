@@ -812,7 +812,7 @@ class Aero7Frontend:
                 if self.state.reboot_error:
                     self.add(y + 8, x + 3, "Could not reboot automatically: " + self.state.reboot_error, self.pair(5))
                     button_y = y + 9
-                self.add(button_y, x + 7, "[ Y Yes, reboot now ]    [ N No, close installer ]", self.pair(6) | curses.A_BOLD)
+                self.add(button_y, x + 7, "[ Y Yes, reboot now ]    [ N No, reboot later ]", self.pair(6) | curses.A_BOLD)
         else:
             if self.state.reboot_required:
                 self.add(y + 5, x + 3, "A reboot is recommended, but this run will not start it.")
