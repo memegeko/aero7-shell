@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 stage_check() {
-  aero7_source_build_may_be_needed
+  aero7_source_build_may_be_needed || aero7_apps_may_need_aur
 }
 
 stage_run() {

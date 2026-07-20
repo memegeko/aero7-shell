@@ -181,6 +181,26 @@ aero7_apps_install_defaults() {
   fi
 }
 
+aero7_apps_may_need_aur() {
+  local recipe
+  for recipe in $(aero7_recipe_list); do
+    aero7_recipe_load "$recipe"
+    [[ "$AERO7_APP_SUPPORTED_SESSION" == "wayland" || "$AERO7_APP_SUPPORTED_SESSION" == "any" ]] || continue
+    [[ "$AERO7_APP_AVAILABLE" == "yes" ]] || continue
+    [[ "$AERO7_APP_INSTALL_KIND" == "aur" ]] || continue
+    case "$AERO7_APP_ID" in
+      winxplorer)
+        [[ "${AERO7_INSTALL_WINXPLORER:-ask}" != "no" ]] || continue
+        ;;
+      sevulet)
+        [[ "${AERO7_INSTALL_SEVULET:-ask}" != "no" ]] || continue
+        ;;
+    esac
+    return 0
+  done
+  return 1
+}
+
 aero7_app_status_line() {
   local color="$1"
   local icon="$2"

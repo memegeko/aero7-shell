@@ -71,6 +71,15 @@ for disabled in aero-dolphin aero-gwenview control-panel; do
   [[ "$AERO7_APP_AVAILABLE" == "no" ]] || fail "$disabled should remain disabled until VM replacement/build validation is explicit"
 done
 
+(
+  export AERO7_PACKAGE_MODE=binary
+  export AERO7_ALLOW_SOURCE_FALLBACK=0
+  unset -f stage_check stage_run stage_validate stage_rollback
+  # shellcheck source=../stages/50-yay.sh
+  source "$repo/stages/50-yay.sh"
+  stage_check || fail "binary mode skipped yay even though default AUR application recipes need it"
+)
+
 for dangerous in "" "/" "/home" "$AERO7_HOME" "/usr" "/etc" "/boot"; do
   if (AERO7_DRY_RUN=1; aero7_safe_remove_tree "$dangerous" "$repo") >/dev/null 2>&1; then
     fail "safe remove allowed dangerous path: ${dangerous:-<empty>}"
