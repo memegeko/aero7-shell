@@ -333,6 +333,7 @@ fi
 aero7_sudo_keepalive_start
 trap 'aero7_sudo_keepalive_stop' EXIT
 aero7_state_init
+aero7_state_clear "warnings"
 
 selected_stage_files=()
 start_running=0

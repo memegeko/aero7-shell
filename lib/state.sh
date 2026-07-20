@@ -56,6 +56,18 @@ aero7_state_get() {
   cat "$file"
 }
 
+aero7_state_clear() {
+  local key="$1"
+  aero7_valid_key "$key" || aero7_die "Invalid state key: $key"
+  local file
+  file="$(aero7_state_dir)/$key"
+  if aero7_dry_run || [[ "$file" == "$AERO7_USER_STATE_DIR"* ]] || [[ -n "${AERO7_STATE_ROOT_OVERRIDE:-}" ]]; then
+    [[ ! -e "$file" ]] || rm -- "$file"
+  else
+    aero7_sudo rm -f -- "$file"
+  fi
+}
+
 aero7_state_mark_stage_complete() {
   local stage="$1"
   aero7_valid_key "$stage" || aero7_die "Invalid stage id: $stage"

@@ -198,6 +198,9 @@ mkdir -p "$root/usr/share/sddm/themes/sddm-theme-mod"
 state="$tmp/state"
 export AERO7_STATE_ROOT_OVERRIDE="$state"
 aero7_state_init
+aero7_state_append warnings "old warning"
+aero7_state_clear warnings
+[[ "$(aero7_state_count_unique warnings)" == "0" ]] || fail "state warning clear left stale warnings"
 aero7_state_append installed_core_packages plasma-desktop
 aero7_state_append skipped_applications "linver: disabled"
 aero7_state_append failed_optional_applications "example: failed"
