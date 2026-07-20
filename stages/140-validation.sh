@@ -6,6 +6,7 @@ stage_check() {
 
 stage_run() {
   local doctor_failed=0
+  aero7_state_set "reboot_prompt_allowed" "no"
   aero7_doctor || doctor_failed=1
   if [[ "$doctor_failed" -eq 1 ]]; then
     aero7_warn "Doctor reported warnings or failures; review before rebooting."
@@ -20,6 +21,11 @@ stage_run() {
     return 0
   fi
   if [[ "$(aero7_state_get reboot_recommended 2>/dev/null || true)" == "yes" ]]; then
+    if declare -F aero7_tui_backend >/dev/null 2>&1 && aero7_tui_backend; then
+      aero7_state_set "reboot_prompt_allowed" "yes"
+      aero7_info "Reboot prompt will be shown by the full-screen installer."
+      return 0
+    fi
     if aero7_confirm "Reboot now?" "no"; then
       aero7_sudo_run systemctl reboot
     else

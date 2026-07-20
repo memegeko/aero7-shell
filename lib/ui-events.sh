@@ -49,6 +49,7 @@ aero7_event_session_complete() {
   aero7_event_emit session_complete \
     "warnings=${1:-0}" \
     "reboot_required=${2:-false}" \
+    "reboot_prompt_enabled=${3:-false}" \
     "log=${AERO7_LOG_FILE:-}"
 }
 

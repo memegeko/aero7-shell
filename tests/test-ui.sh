@@ -27,6 +27,7 @@ mkdir -p "$AERO7_HOME"
 
 source "$repo/lib/common.sh"
 source "$repo/lib/logging.sh"
+source "$repo/lib/ui-controller.sh"
 source "$repo/lib/ui.sh"
 source "$repo/lib/prompts.sh"
 
@@ -59,6 +60,25 @@ layout_choice="$(printf '2\n' | aero7_prompt_layout_choice 2>"$layout_prompt_err
 [[ "$layout_choice" == "keep" ]] || fail "layout prompt did not return only the selected value"
 grep -q 'Plasma layout' "$layout_prompt_err" || fail "layout prompt did not render user-facing text on stderr"
 
+sudo_prompt_log="$tmp/sudo-prompt.log"
+sudo_screen="$(
+  AERO7_UI_TTY=1
+  AERO7_UI_PLAIN=0
+  AERO7_UI_COLOR=0
+  AERO7_TUI_SUDO_SUCCESS_DELAY=0
+  sudo() {
+    printf '%s\n' "$@" >"$sudo_prompt_log"
+  }
+  aero7_tui_validate_sudo
+)"
+[[ "$sudo_screen" == *"Administrator access"* ]] || fail "styled sudo screen missed title"
+[[ "$sudo_screen" == *"Aero7-shell needs sudo once"* ]] || fail "styled sudo screen missed sudo explanation"
+[[ "$sudo_screen" == *"sudo access confirmed"* ]] || fail "styled sudo screen missed confirmation"
+grep -Fxq -- "-p" "$sudo_prompt_log" || fail "styled sudo validation did not pass a custom sudo prompt"
+grep -Fxq -- "  Password for %p: " "$sudo_prompt_log" || fail "styled sudo prompt text was not passed to sudo"
+grep -Fxq -- "-v" "$sudo_prompt_log" || fail "styled sudo validation did not validate cached credentials"
+! grep -q 'Validating sudo before starting the full-screen installer' "$repo/install.sh" || fail "old plain sudo preflight text is still wired"
+
 install_dir="$tmp/install"
 mkdir -p "$install_dir"
 AERO7_USER_STATE_DIR="$install_dir/state" \
@@ -77,7 +97,7 @@ fi
 if grep -q $'\033\\[?25' "$install_dir/plain.out" "$install_dir/plain.err"; then
   fail "plain dry-run emitted cursor visibility control"
 fi
-grep -Eq '\[ +1/15 \] Checking system' "$install_dir/plain.out" || fail "plain dry-run missed stage numbering"
+grep -Eq '\[ +1/16 \] Checking system' "$install_dir/plain.out" || fail "plain dry-run missed stage numbering"
 grep -q 'Installation completed' "$install_dir/plain.out" || fail "plain dry-run missed final summary"
 grep -q '^  Warnings' "$install_dir/plain.out" || fail "plain dry-run missed warning count"
 
@@ -100,7 +120,7 @@ TERM=dumb \
 "$repo/install.sh" --dry-run --non-interactive --no-reboot --plain --quiet \
   >"$install_dir/quiet.out" 2>"$install_dir/quiet.err" || fail "quiet dry-run failed"
 
-grep -Eq '\[ +1/15 \] Checking system' "$install_dir/quiet.out" || fail "quiet dry-run missed stage heading"
+grep -Eq '\[ +1/16 \] Checking system' "$install_dir/quiet.out" || fail "quiet dry-run missed stage heading"
 ! grep -q 'Would install:' "$install_dir/quiet.out" || fail "quiet dry-run showed routine details"
 grep -q 'Installation completed' "$install_dir/quiet.out" || fail "quiet dry-run missed final summary"
 

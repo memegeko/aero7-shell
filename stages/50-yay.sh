@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 stage_check() {
-  return 0
+  aero7_source_build_may_be_needed
 }
 
 stage_run() {
@@ -15,4 +15,3 @@ stage_validate() {
 stage_rollback() {
   return 0
 }
-

@@ -32,7 +32,6 @@ env.update(
         "TERM": "xterm-256color",
         "AERO7_PROJECT_ROOT": str(REPO),
         "AERO7_TEST_FAST": "1",
-        "AERO7_TUI_EXIT_DELAY": "0.1",
     }
 )
 
@@ -48,6 +47,7 @@ os.close(slave_fd)
 
 captured = bytearray()
 deadline = time.monotonic() + 15
+answered_completion = False
 try:
     while time.monotonic() < deadline:
         ready, _, _ = select.select([master_fd], [], [], 0.2)
@@ -59,6 +59,9 @@ try:
             if not chunk:
                 break
             captured.extend(chunk)
+            if not answered_completion and b"Reboot now?" in captured:
+                os.write(master_fd, b"n")
+                answered_completion = True
         if proc.poll() is not None:
             ready, _, _ = select.select([master_fd], [], [], 0)
             if ready:
@@ -81,6 +84,9 @@ if proc.poll() is None:
 if proc.returncode != 0:
     sys.stderr.buffer.write(bytes(captured[-4000:]))
     fail(f"ui demo exited {proc.returncode}")
+if not answered_completion:
+    sys.stderr.buffer.write(bytes(captured[-4000:]))
+    fail("completion reboot dialog was not observed")
 
 output = bytes(captured)
 if b"\x1b[?1049h" not in output and b"\x1b[?47h" not in output:

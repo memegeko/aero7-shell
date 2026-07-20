@@ -6,7 +6,7 @@ stage_check() {
 
 stage_run() {
   aero7_warn "Installing Wayland AeroThemePlasma packages. X11 Aero packages remain prohibited."
-  aero7_install_configured_aur_packages
+  aero7_install_aero_packages
 }
 
 stage_validate() {

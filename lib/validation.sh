@@ -190,6 +190,24 @@ aero7_doctor() {
     aero7_check_status "AeroShell components" "NOT INSTALLED"
   fi
 
+  local aero_origin
+  aero_origin="$(aero7_state_get aero_packages_origin 2>/dev/null || printf 'unknown')"
+  case "$aero_origin" in
+    binary)
+      if aero7_repository_key_configured; then
+        aero7_check_status "Aero package origin: signed repository" "OK"
+      else
+        aero7_check_status "Aero package origin: signed repository key unconfigured" "WARNING"
+      fi
+      ;;
+    source)
+      aero7_check_status "Aero package origin: AUR source build" "WARNING"
+      ;;
+    *)
+      aero7_check_status "Aero package origin" "WARNING"
+      ;;
+  esac
+
   if aero7_have systemctl && aero7_systemctl_is_enabled sddm.service; then
     aero7_check_status "SDDM enabled" "OK"
   else
@@ -355,6 +373,7 @@ aero7_final_report_pretty() {
   aero7_final_status_line "$AERO7_C_GREEN" "$AERO7_ICON_OK" "KDE Plasma Wayland target"
   aero7_final_status_line "$AERO7_C_GREEN" "$AERO7_ICON_OK" "AeroThemePlasma packages"
   aero7_final_status_line "$AERO7_C_GREEN" "$AERO7_ICON_OK" "AeroShell components"
+  aero7_final_status_line "$AERO7_C_GREEN" "$AERO7_ICON_OK" "Aero package origin: $(aero7_state_get aero_packages_origin 2>/dev/null || printf 'unknown')"
   aero7_final_status_line "$AERO7_C_GREEN" "$AERO7_ICON_OK" "SDDM configuration"
 
   printf '\n  %sApplications%s\n' "$AERO7_C_BOLD" "$AERO7_C_RESET"

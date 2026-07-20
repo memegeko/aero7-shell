@@ -33,9 +33,18 @@ Useful installer options:
 ./install.sh --restart-stage 60-aeroshell
 ./install.sh --skip-stage 100-plymouth
 ./install.sh --non-interactive --no-reboot
+./install.sh --binary-packages
+./install.sh --source-build
+./install.sh --allow-source-fallback
 ```
 
 Noninteractive mode keeps any existing Plasma layout, skips WinXplorer, skips
 Sevulet, and does not reboot unless explicit options are added. The installer
 still pre-applies the upstream AeroThemePlasma Wayland session and marks its
 first-time setup wizard as complete after configuring the equivalent settings.
+
+The binary package path is alpha-only until the signed Aero7 package repository
+has a published key and complete package set. `--binary-packages` fails closed
+if the signed repository is unavailable. `--source-build` keeps the original
+AUR build behavior. `--allow-source-fallback` is required for noninteractive
+runs that may fall back from binaries to source builds.

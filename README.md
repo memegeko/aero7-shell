@@ -9,6 +9,18 @@ Aero7-shell is a standalone post-installation setup system for Arch Linux. It tu
 
 Aero7-shell honestly reports the operating system as Arch Linux. It recreates styling and interface concepts; it is not a Microsoft product.
 
+## Preview
+
+Screenshots from a VM test build. See the full gallery in [Screenshots](docs/SCREENSHOTS.md).
+
+| Start menu | Taskbar grouping |
+| --- | --- |
+| <img src="docs/screenshots/start_menu.png" alt="Aero7-shell Start menu" width="320"> | <img src="docs/screenshots/seventasks_compact.png" alt="Aero7-shell compact taskbar grouping" width="320"> |
+
+| Authentication prompt | Notification |
+| --- | --- |
+| <img src="docs/screenshots/uac.png" alt="Aero7-shell authentication prompt" width="360"> | <img src="docs/screenshots/notification.png" alt="Aero7-shell notification popup" width="360"> |
+
 ## Status
 
 This repository is VM-tested for a clean Arch-based install flow. The installer is modular, resumable, logged, and defensive, but several third-party Aero application recipes remain marked unavailable or experimental until their upstream build instructions are verified.
@@ -58,7 +70,7 @@ For local development:
 - Installs KDE Plasma Wayland packages and common desktop applications
 - Enables NetworkManager and SDDM
 - Installs `yay` without running AUR builds as root
-- Installs the full Wayland AeroThemePlasma and AeroShell AUR shell stack
+- Installs the full Wayland AeroThemePlasma and AeroShell stack from signed binary packages when available, or AUR source builds with explicit fallback
 - Installs compatible Aero applications through explicit recipes
 - Prompts separately for WinXplorer and Sevulet
 - Prompts before replacing Plasma layout
@@ -68,6 +80,7 @@ For local development:
 - Adds an Aero7 Fastfetch profile that clearly says Arch Linux
 - Adds reversible Wine MIME integration
 - Adds `aero7`, `aero7-dir`, `aero7-ipconfig`, `aero7-systeminfo`, and `aero7-winver`
+- Supports a signed binary package repository path once the alpha Aero7 package repository is published
 
 ## Management Command
 
@@ -82,15 +95,18 @@ aero7 backups
 aero7 restore --latest
 aero7 uninstall
 aero7 apps status
+aero7 repo status
 aero7 wine status
 ```
 
 ## Documentation
 
 - [Installation](docs/INSTALLATION.md)
+- [Screenshots](docs/SCREENSHOTS.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [UI architecture](docs/UI-ARCHITECTURE.md)
 - [Applications](docs/APPLICATIONS.md)
+- [Binary packages](docs/BINARY-PACKAGES.md)
 - [Boot configuration](docs/BOOT-CONFIGURATION.md)
 - [Wayland limitations](docs/WAYLAND-LIMITATIONS.md)
 - [Asset licensing](docs/ASSET-LICENSING.md)
