@@ -9,33 +9,6 @@ Aero7-shell is a standalone post-installation setup system for Arch Linux. It tu
 
 Aero7-shell honestly reports the operating system as Arch Linux. It recreates styling and interface concepts; it is not a Microsoft product.
 
-## Preview
-
-Screenshots from a VM test build. See the full gallery in [Screenshots](docs/SCREENSHOTS.md).
-
-| Start menu | Taskbar grouping |
-| --- | --- |
-| <img src="docs/screenshots/start_menu.png" alt="Aero7-shell Start menu" width="320"> | <img src="docs/screenshots/seventasks_compact.png" alt="Aero7-shell compact taskbar grouping" width="320"> |
-
-| Authentication prompt | Notification |
-| --- | --- |
-| <img src="docs/screenshots/uac.png" alt="Aero7-shell authentication prompt" width="360"> | <img src="docs/screenshots/notification.png" alt="Aero7-shell notification popup" width="360"> |
-
-## Status
-
-This repository is VM-tested for a clean Arch-based install flow. The installer is modular, resumable, logged, and defensive, but several third-party Aero application recipes remain marked unavailable or experimental until their upstream build instructions are verified.
-
-## Supported Environment
-
-- Arch Linux with a normal sudo-capable user
-- Fresh minimal Arch installation as the initial target
-- KDE Plasma 6 Wayland only
-- GRUB or systemd-boot
-- mkinitcpio or dracut
-- Browser theming intentionally excluded
-
-Aero7-shell does not partition disks, install Arch Linux, replace the bootloader, enable autologin, install GPU drivers without need, or install an X11 Plasma session.
-
 ## Installation
 
 One-line install from the current GitHub `main` branch:
@@ -64,6 +37,33 @@ For local development:
 ./install.sh --dry-run
 ./install.sh --dry-run --non-interactive
 ```
+
+## Preview
+
+Screenshots from a VM test build. See the full gallery in [Screenshots](docs/SCREENSHOTS.md).
+
+| Start menu | Taskbar grouping |
+| --- | --- |
+| <img src="docs/screenshots/start_menu.png" alt="Aero7-shell Start menu" width="320"> | <img src="docs/screenshots/seventasks_compact.png" alt="Aero7-shell compact taskbar grouping" width="320"> |
+
+| Authentication prompt | Notification |
+| --- | --- |
+| <img src="docs/screenshots/uac.png" alt="Aero7-shell authentication prompt" width="360"> | <img src="docs/screenshots/notification.png" alt="Aero7-shell notification popup" width="360"> |
+
+## Status
+
+This repository is VM-tested for a clean Arch-based install flow. The installer is modular, resumable, logged, and defensive, but several third-party Aero application recipes remain marked unavailable or experimental until their upstream build instructions are verified.
+
+## Supported Environment
+
+- Arch Linux with a normal sudo-capable user
+- Fresh minimal Arch installation as the initial target
+- KDE Plasma 6 Wayland only
+- GRUB or systemd-boot
+- mkinitcpio or dracut
+- Browser theming intentionally excluded
+
+Aero7-shell does not partition disks, install Arch Linux, replace the bootloader, enable autologin, install GPU drivers without need, or install an X11 Plasma session.
 
 ## What It Changes
 
