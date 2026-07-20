@@ -4,10 +4,10 @@ Aero7-shell can install the Aero desktop package set from a signed pacman
 repository once the alpha repository has been built, signed, published, and
 tested.
 
-Current status: the integration code is present, but the repository signing
-fingerprint is still `MANUAL_ACTION_REQUIRED`. Until the public key and
-fingerprint are filled in, the default installer path keeps using AUR source
-builds.
+Current status: the repository public key is present and pinned to fingerprint
+`72C79ABBBBE96446DD3324042694BFE1090F4FD6`, but the complete package set has
+not been published yet. Until the repository is reachable with all packages,
+the default installer path keeps using AUR source builds.
 
 ## Modes
 
