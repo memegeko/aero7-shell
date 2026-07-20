@@ -43,8 +43,9 @@ Sevulet, and does not reboot unless explicit options are added. The installer
 still pre-applies the upstream AeroThemePlasma Wayland session and marks its
 first-time setup wizard as complete after configuring the equivalent settings.
 
-The binary package path is alpha-only until the signed Aero7 package repository
-has a published key and complete package set. `--binary-packages` fails closed
-if the signed repository is unavailable. `--source-build` keeps the original
-AUR build behavior. `--allow-source-fallback` is required for noninteractive
-runs that may fall back from binaries to source builds.
+The signed Aero7 package repository is alpha-only, but it is live and pinned by
+fingerprint. The default installer path prefers those signed binary packages
+when available. `--binary-packages` fails closed if the signed repository is
+unavailable. `--source-build` keeps the original AUR build behavior.
+`--allow-source-fallback` is required for noninteractive runs that may fall back
+from binaries to source builds.

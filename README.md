@@ -80,7 +80,7 @@ For local development:
 - Adds an Aero7 Fastfetch profile that clearly says Arch Linux
 - Adds reversible Wine MIME integration
 - Adds `aero7`, `aero7-dir`, `aero7-ipconfig`, `aero7-systeminfo`, and `aero7-winver`
-- Supports a signed binary package repository path once the alpha Aero7 package repository is published
+- Uses the signed alpha Aero7 package repository when available, with explicit source-build fallback controls
 
 ## Management Command
 
