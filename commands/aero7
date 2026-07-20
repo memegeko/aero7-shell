@@ -38,18 +38,21 @@ if [[ "$AERO7_DEBUG" == "1" ]]; then
 fi
 
 resolve_root() {
-  if [[ -n "${AERO7_PROJECT_ROOT:-}" && -d "$AERO7_PROJECT_ROOT/lib" ]]; then
+  local system_root
+
+  if [[ -n "${AERO7_PROJECT_ROOT:-}" && -f "$AERO7_PROJECT_ROOT/lib/common.sh" && -d "$AERO7_PROJECT_ROOT/config" ]]; then
     printf '%s\n' "$AERO7_PROJECT_ROOT"
     return 0
   fi
   local script_dir
   script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-  if [[ -d "$script_dir/../lib" ]]; then
+  if [[ -f "$script_dir/../lib/common.sh" && -d "$script_dir/../config" ]]; then
     cd -- "$script_dir/.." && pwd -P
     return 0
   fi
-  if [[ -d /usr/local/lib/aero7-shell/lib ]]; then
-    printf '%s\n' /usr/local/lib/aero7-shell
+  system_root="${AERO7_SYSTEM_LIB_DIR:-/usr/local/lib/aero7-shell}"
+  if [[ -f "$system_root/lib/common.sh" && -d "$system_root/config" ]]; then
+    printf '%s\n' "$system_root"
     return 0
   fi
   return 1

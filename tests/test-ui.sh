@@ -194,6 +194,21 @@ status_output="$(
 [[ "$status_output" == *"Aero7-shell Status"* ]] || fail "aero7 status missed title"
 [[ "$status_output" == *"Warnings"* ]] || fail "aero7 status missed warning count"
 
+prefix_dir="$tmp/prefix"
+mkdir -p "$prefix_dir/bin" "$prefix_dir/lib"
+install -m 0755 "$repo/commands/aero7" "$prefix_dir/bin/aero7"
+installed_status_output="$(
+  env -u AERO7_PROJECT_ROOT \
+    AERO7_SYSTEM_LIB_DIR="$repo" \
+    AERO7_HOME="$mgmt_dir/home" \
+    AERO7_LOG_DIR="$mgmt_dir/installed-status-logs" \
+    AERO7_LOG_FILE='' \
+    AERO7_USER_STATE_DIR="$mgmt_dir/state" \
+    TERM=dumb \
+    "$prefix_dir/bin/aero7" --plain status
+)"
+[[ "$installed_status_output" == *"Aero7-shell Status"* ]] || fail "installed aero7 command resolved generic ../lib as project root"
+
 apps_output="$(
   env -u AERO7_PROJECT_ROOT \
     AERO7_HOME="$mgmt_dir/home" \
