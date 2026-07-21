@@ -64,6 +64,14 @@ aero7_app_validate_current_recipe() {
   aero7_run bash -lc "$AERO7_APP_VALIDATE_COMMAND"
 }
 
+aero7_app_signed_package_available_current_recipe() {
+  [[ "${AERO7_APP_INSTALL_KIND:-}" == "aur" ]] || return 1
+  [[ -n "${AERO7_APP_AUR_PACKAGE:-}" ]] || return 1
+  [[ "$(aero7_state_get binary_repo_ready 2>/dev/null || printf no)" == "yes" ]] || return 1
+  aero7_binary_repo_load_config
+  aero7_binary_repo_package_available "$AERO7_APP_AUR_PACKAGE"
+}
+
 aero7_app_install_current_recipe() {
   if [[ "$AERO7_APP_SUPPORTED_SESSION" != "wayland" && "$AERO7_APP_SUPPORTED_SESSION" != "any" ]]; then
     aero7_skip "$AERO7_APP_NAME skipped: not marked Wayland-compatible"
@@ -85,7 +93,12 @@ aero7_app_install_current_recipe() {
   case "$AERO7_APP_INSTALL_KIND" in
     aur)
       [[ -n "${AERO7_APP_AUR_PACKAGE:-}" ]] || aero7_die "$AERO7_APP_NAME recipe lacks AUR package."
-      aero7_yay_install_packages "$AERO7_APP_AUR_PACKAGE" || return 1
+      if aero7_app_signed_package_available_current_recipe; then
+        AERO7_BINARY_REPO_INSTALL_TITLE="Installing $AERO7_APP_NAME from signed Aero7 repository" \
+          aero7_binary_repo_install_named_packages "$AERO7_APP_AUR_PACKAGE" || return 1
+      else
+        aero7_yay_install_packages "$AERO7_APP_AUR_PACKAGE" || return 1
+      fi
       ;;
     git-cmake)
       [[ -n "${AERO7_APP_SOURCE_URL:-}" ]] || aero7_die "$AERO7_APP_NAME recipe lacks source URL."
@@ -196,6 +209,9 @@ aero7_apps_may_need_aur() {
         [[ "${AERO7_INSTALL_SEVULET:-ask}" != "no" ]] || continue
         ;;
     esac
+    if aero7_app_signed_package_available_current_recipe; then
+      continue
+    fi
     return 0
   done
   return 1

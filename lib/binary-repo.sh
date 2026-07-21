@@ -186,15 +186,15 @@ aero7_binary_repo_prepare() {
   aero7_state_set "binary_repo_ready" "yes"
 }
 
-aero7_binary_repo_install_packages() {
-  local packages=()
+aero7_binary_repo_install_named_packages() {
+  local packages=("$@")
   local package args=()
   local needs_conflict_resolution=0
+  local title="${AERO7_BINARY_REPO_INSTALL_TITLE:-Downloading signed Aero7 packages}"
   aero7_binary_repo_load_config
-  mapfile -t packages < <(aero7_binary_repo_packages)
-  [[ "${#packages[@]}" -gt 0 ]] || aero7_die "No Aero7 packages configured for binary installation."
+  [[ "${#packages[@]}" -gt 0 ]] || aero7_die "No Aero7 packages requested for binary installation."
   aero7_validate_no_x11_packages_configured "${packages[@]}" || return 1
-  aero7_action "Downloading signed Aero7 packages"
+  aero7_action "$title"
   if aero7_dry_run; then
     local dry_index=0
     for package in "${packages[@]}"; do
@@ -243,8 +243,15 @@ aero7_binary_repo_install_packages() {
     aero7_state_append "installed_binary_packages" "$package"
     aero7_state_append "package_origin" "$package=Aero7 signed repository"
   done
-  aero7_state_set "aero_packages_origin" "binary"
   aero7_ok "${#packages[@]} signed Aero7 package(s) installed"
+}
+
+aero7_binary_repo_install_packages() {
+  local packages=()
+  mapfile -t packages < <(aero7_binary_repo_packages)
+  [[ "${#packages[@]}" -gt 0 ]] || aero7_die "No Aero7 packages configured for binary installation."
+  aero7_binary_repo_install_named_packages "${packages[@]}" || return 1
+  aero7_state_set "aero_packages_origin" "binary"
 }
 
 aero7_source_fallback_allowed_or_prompt() {

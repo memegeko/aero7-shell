@@ -74,10 +74,35 @@ done
 (
   export AERO7_PACKAGE_MODE=binary
   export AERO7_ALLOW_SOURCE_FALLBACK=0
+  state_tmp="$(mktemp -d)"
+  trap 'rm -rf -- "$state_tmp"' EXIT
+  export AERO7_STATE_ROOT_OVERRIDE="$state_tmp"
+  aero7_state_set binary_repo_ready yes
+  aero7_binary_repo_package_available() {
+    [[ "$1" == "linux-devmgmt" || "$1" == "tuxmanager" ]]
+  }
   unset -f stage_check stage_run stage_validate stage_rollback
   # shellcheck source=../stages/50-yay.sh
   source "$repo/stages/50-yay.sh"
-  stage_check || fail "binary mode skipped yay even though default AUR application recipes need it"
+  if stage_check; then
+    fail "binary mode still required yay even though default app packages are signed"
+  fi
+)
+
+(
+  export AERO7_PACKAGE_MODE=binary
+  export AERO7_ALLOW_SOURCE_FALLBACK=0
+  state_tmp="$(mktemp -d)"
+  trap 'rm -rf -- "$state_tmp"' EXIT
+  export AERO7_STATE_ROOT_OVERRIDE="$state_tmp"
+  aero7_state_set binary_repo_ready yes
+  aero7_binary_repo_package_available() {
+    [[ "$1" == "linux-devmgmt" ]]
+  }
+  unset -f stage_check stage_run stage_validate stage_rollback
+  # shellcheck source=../stages/50-yay.sh
+  source "$repo/stages/50-yay.sh"
+  stage_check || fail "binary mode skipped yay even though tuxmanager was missing from signed packages"
 )
 
 for dangerous in "" "/" "/home" "$AERO7_HOME" "/usr" "/etc" "/boot"; do
@@ -398,6 +423,27 @@ EOF
   [[ "$normal_call" == *"--sudoloop"* && "$normal_call" == *"--batchinstall"* && "$normal_call" == *"--removemake"* ]] || fail "normal yay group missing prompt-reduction flags"
   [[ "$normal_call" == *"--mflags=--noconfirm"* ]] || fail "normal yay group missing makepkg --noconfirm"
   [[ "$normal_call" != *"--useask"* ]] || fail "normal yay group used conflict-only --useask"
+)
+
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_STATE_ROOT_OVERRIDE="$tmp/app-binary-state"
+  binary_app_log="$tmp/app-binary-install.log"
+  aero7_state_set binary_repo_ready yes
+  AERO7_APP_ID="device-manager"
+  AERO7_APP_NAME="Linux Device Manager"
+  AERO7_APP_SUPPORTED_SESSION="wayland"
+  AERO7_APP_AVAILABLE="yes"
+  AERO7_APP_EXPERIMENTAL="no"
+  AERO7_APP_INSTALL_KIND="aur"
+  AERO7_APP_AUR_PACKAGE="linux-devmgmt"
+  AERO7_APP_FATAL="no"
+  AERO7_APP_VALIDATE_COMMAND="true"
+  aero7_binary_repo_package_available() { [[ "$1" == "linux-devmgmt" ]]; }
+  aero7_binary_repo_install_named_packages() { printf '%s\n' "$*" >"$binary_app_log"; }
+  aero7_yay_install_packages() { fail "signed application package used yay"; }
+  aero7_app_install_current_recipe >/dev/null
+  grep -qx 'linux-devmgmt' "$binary_app_log" || fail "signed application package did not use binary repo helper"
 )
 
 (
