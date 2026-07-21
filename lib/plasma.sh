@@ -186,9 +186,184 @@ aero7_color_scheme_available() {
   return 1
 }
 
+aero7_light_color_scheme_name() {
+  printf '%s\n' "Aero7Light"
+}
+
+aero7_light_color_scheme_path() {
+  local home
+  home="$(aero7_theme_user_home)"
+  printf '%s/.local/share/color-schemes/%s.colors\n' "$home" "$(aero7_light_color_scheme_name)"
+}
+
+aero7_light_color_scheme_text() {
+  cat <<'EOF'
+[ColorEffects:Disabled]
+Color=56,56,56
+ColorAmount=0
+ColorEffect=0
+ContrastAmount=0.65
+ContrastEffect=1
+IntensityAmount=0.1
+IntensityEffect=2
+
+[ColorEffects:Inactive]
+ChangeSelectionColor=true
+Color=112,111,110
+ColorAmount=0.025
+ColorEffect=2
+ContrastAmount=0.1
+ContrastEffect=2
+Enable=false
+IntensityAmount=0
+IntensityEffect=0
+
+[Colors:Button]
+BackgroundAlternate=227,227,227
+BackgroundNormal=240,240,240
+DecorationFocus=51,153,255
+DecorationHover=153,204,255
+ForegroundActive=51,153,255
+ForegroundInactive=140,140,140
+ForegroundLink=0,0,255
+ForegroundNegative=218,68,83
+ForegroundNeutral=198,92,0
+ForegroundNormal=0,0,0
+ForegroundPositive=39,174,96
+ForegroundVisited=128,0,128
+
+[Colors:Complementary]
+BackgroundAlternate=227,227,227
+BackgroundNormal=240,240,240
+DecorationFocus=51,153,255
+DecorationHover=153,204,255
+ForegroundActive=51,153,255
+ForegroundInactive=96,96,96
+ForegroundLink=0,0,255
+ForegroundNegative=218,68,83
+ForegroundNeutral=246,116,0
+ForegroundNormal=0,0,0
+ForegroundPositive=39,174,96
+ForegroundVisited=128,0,128
+
+[Colors:Selection]
+BackgroundAlternate=51,153,255
+BackgroundNormal=51,153,255
+DecorationFocus=51,153,255
+DecorationHover=153,204,255
+ForegroundActive=255,255,255
+ForegroundInactive=143,199,255
+ForegroundLink=0,0,255
+ForegroundNegative=176,55,69
+ForegroundNeutral=246,116,0
+ForegroundNormal=255,255,255
+ForegroundPositive=23,104,57
+ForegroundVisited=128,0,128
+
+[Colors:Tooltip]
+BackgroundAlternate=77,77,77
+BackgroundNormal=255,255,225
+DecorationFocus=51,153,255
+DecorationHover=153,204,255
+ForegroundActive=61,174,233
+ForegroundInactive=140,140,140
+ForegroundLink=41,128,185
+ForegroundNegative=218,68,83
+ForegroundNeutral=246,116,0
+ForegroundNormal=0,0,0
+ForegroundPositive=39,174,96
+ForegroundVisited=127,140,141
+
+[Colors:View]
+BackgroundAlternate=247,247,247
+BackgroundNormal=255,255,255
+DecorationFocus=51,153,255
+DecorationHover=153,204,255
+ForegroundActive=51,153,255
+ForegroundInactive=140,140,140
+ForegroundLink=0,0,255
+ForegroundNegative=218,68,83
+ForegroundNeutral=246,116,0
+ForegroundNormal=0,0,0
+ForegroundPositive=39,174,96
+ForegroundVisited=128,0,128
+
+[Colors:Window]
+BackgroundAlternate=227,227,227
+BackgroundNormal=240,240,240
+DecorationFocus=51,153,255
+DecorationHover=153,204,255
+ForegroundActive=51,153,255
+ForegroundInactive=140,140,140
+ForegroundLink=0,0,255
+ForegroundNegative=218,68,83
+ForegroundNeutral=246,116,0
+ForegroundNormal=0,0,0
+ForegroundPositive=39,174,96
+ForegroundVisited=128,0,128
+
+[General]
+ColorScheme=BreezeClassic
+Name=Aero7 Light
+shadeSortColumn=true
+
+[KDE]
+contrast=4
+
+[WM]
+activeBackground=153,180,209
+activeBlend=185,209,234
+activeForeground=0,0,0
+inactiveBackground=191,205,219
+inactiveBlend=215,228,242
+inactiveForeground=67,78,84
+EOF
+}
+
+aero7_install_light_color_scheme() {
+  local scheme path tmp
+  scheme="$(aero7_light_color_scheme_name)"
+  path="$(aero7_light_color_scheme_path)"
+
+  if aero7_dry_run; then
+    printf '%s\n' "$scheme"
+    return 0
+  fi
+
+  tmp="$(mktemp)" || return 1
+  aero7_light_color_scheme_text >"$tmp"
+  chmod 0644 "$tmp"
+  aero7_user_run install -d -m 0755 "$(dirname -- "$path")" || {
+    rm -f -- "$tmp"
+    return 1
+  }
+  aero7_user_run install -m 0644 "$tmp" "$path" || {
+    rm -f -- "$tmp"
+    return 1
+  }
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$path"
+  printf '%s\n' "$scheme"
+}
+
+aero7_preseed_light_complementary_colors() {
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key BackgroundAlternate "227,227,227" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key BackgroundNormal "240,240,240" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key DecorationFocus "51,153,255" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key DecorationHover "153,204,255" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundActive "51,153,255" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundInactive "96,96,96" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundLink "0,0,255" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundNegative "218,68,83" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundNeutral "246,116,0" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundNormal "0,0,0" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundPositive "39,174,96" || true
+  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundVisited "128,0,128" || true
+}
+
 aero7_find_color_scheme() {
   local candidate dir file base
-  for candidate in Aero Windows7Aero BreezeClassic BreezeLight; do
+  for candidate in Aero7Light Aero Windows7Aero BreezeClassic BreezeLight; do
     if aero7_color_scheme_available "$candidate"; then
       printf '%s\n' "$candidate"
       return 0
@@ -306,7 +481,8 @@ aero7_preseed_atp_user_config() {
 
   local lookandfeel color_scheme icon_theme cursor_theme kvantum_theme desktop_theme
   lookandfeel="$(aero7_find_lookandfeel_package || true)"
-  color_scheme="$(aero7_find_color_scheme || true)"
+  color_scheme="$(aero7_install_light_color_scheme || true)"
+  [[ -n "$color_scheme" ]] || color_scheme="$(aero7_find_color_scheme || true)"
   icon_theme="$(aero7_find_icon_theme || true)"
   cursor_theme="$(aero7_find_cursor_theme || true)"
   kvantum_theme="$(aero7_find_kvantum_theme || true)"
@@ -317,6 +493,7 @@ aero7_preseed_atp_user_config() {
   aero7_kwriteconfig_user --file kdeglobals --group General --key accentColorFromWallpaper --type bool false || true
   if [[ -n "$color_scheme" ]]; then
     aero7_kwriteconfig_user --file kdeglobals --group General --key ColorScheme "$color_scheme" || true
+    aero7_preseed_light_complementary_colors
   else
     aero7_warn "No light Aero/Plasma color scheme was found to preseed."
   fi

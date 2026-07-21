@@ -151,17 +151,25 @@ touch "$root/usr/share/plasma/desktoptheme/Seven-Black/metadata.json"
 [[ "$(aero7_find_cursor_theme)" == "aero-drop" ]] || fail "Aero cursor theme was not detected"
 [[ "$(aero7_find_kvantum_theme)" == "Windows7Aero" ]] || fail "Aero Kvantum theme was not detected"
 [[ "$(aero7_find_plasma_desktop_theme)" == "Seven-Black" ]] || fail "Aero Plasma desktop theme was not detected"
+scheme_text="$(aero7_light_color_scheme_text)"
+grep -Fq '[Colors:Complementary]' <<<"$scheme_text" || fail "Aero7 light color scheme missed complementary colors"
+grep -Fq 'BackgroundNormal=240,240,240' <<<"$scheme_text" || fail "Aero7 light color scheme kept a dark complementary background"
+grep -Fq 'ForegroundNormal=0,0,0' <<<"$scheme_text" || fail "Aero7 light color scheme missed readable complementary text"
 
 (
   export AERO7_DRY_RUN=0
   export AERO7_TEST_ROOT="$root"
+  export AERO7_HOME="$tmp/plasma-preseed-home"
+  export AERO7_STATE_ROOT_OVERRIDE="$tmp/plasma-preseed-state"
   unset DISPLAY WAYLAND_DISPLAY
   write_log="$tmp/plasma-preseed.log"
   aero7_have() { [[ "$1" == "kwriteconfig6" ]]; }
   aero7_user_run() { printf '%s\n' "$*" >>"$write_log"; }
   aero7_apply_plasma_theme >/dev/null
   grep -Fq -- '--file kdeglobals --group KDE --key LookAndFeelPackage authui7' "$write_log" || fail "Plasma preseed did not pin the Aero global theme"
-  grep -Fq -- '--file kdeglobals --group General --key ColorScheme Aero' "$write_log" || fail "Plasma preseed did not pin the Aero color scheme"
+  grep -Fq -- '--file kdeglobals --group General --key ColorScheme Aero7Light' "$write_log" || fail "Plasma preseed did not pin the Aero7 light color scheme"
+  grep -Fq -- '--file kdeglobals --group Colors:Complementary --key BackgroundNormal 240,240,240' "$write_log" || fail "Plasma preseed did not force the complementary background light"
+  grep -Fq -- '--file kdeglobals --group Colors:Complementary --key ForegroundNormal 0,0,0' "$write_log" || fail "Plasma preseed did not force readable complementary text"
   grep -Fq -- '--file kdeglobals --group KDE --key widgetStyle kvantum' "$write_log" || fail "Plasma preseed did not pin Kvantum as the widget style"
   grep -Fq -- '--file kvantum.kvconfig --group General --key theme Windows7Aero' "$write_log" || fail "Plasma preseed did not pin the Windows7Aero Kvantum theme"
   grep -Fq -- '--file plasmarc --group Theme --key name Seven-Black' "$write_log" || fail "Plasma preseed did not pin the upstream desktop theme"
@@ -170,6 +178,8 @@ touch "$root/usr/share/plasma/desktoptheme/Seven-Black/metadata.json"
 (
   export AERO7_DRY_RUN=0
   export AERO7_TEST_ROOT="$root"
+  export AERO7_HOME="$tmp/plasma-order-home"
+  export AERO7_STATE_ROOT_OVERRIDE="$tmp/plasma-order-state"
   order_log="$tmp/plasma-apply-order.log"
   aero7_have() { [[ "$1" == "kwriteconfig6" ]]; }
   aero7_graphical_session_available() { return 0; }
