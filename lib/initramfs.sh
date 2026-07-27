@@ -86,6 +86,52 @@ aero7_validate_dracut_plymouth_dropin() {
   grep -q 'add_dracutmodules+=" plymouth "' "$file" || return 1
 }
 
+aero7_mkinitcpio_config_has_plymouth() {
+  local source line inside hook
+  local -a hooks=()
+  source="${AERO7_MKINITCPIO_CONF:-$(aero7_root_path /etc/mkinitcpio.conf)}"
+  [[ -f "$source" ]] || return 1
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^[[:space:]]*HOOKS=\((.*)\) ]] || continue
+    inside="${BASH_REMATCH[1]}"
+    read -r -a hooks <<<"$inside"
+    for hook in "${hooks[@]}"; do
+      [[ "$hook" == "plymouth" ]] && return 0
+    done
+  done <"$source"
+  return 1
+}
+
+aero7_dracut_config_has_plymouth() {
+  local dropin
+  dropin="${AERO7_DRACUT_DROPIN:-$(aero7_root_path /etc/dracut.conf.d/aero7-plymouth.conf)}"
+  [[ -f "$dropin" ]] || return 1
+  aero7_validate_dracut_plymouth_dropin "$dropin"
+}
+
+aero7_initramfs_config_has_plymouth() {
+  local initramfs
+  initramfs="$(aero7_detect_initramfs)"
+  case "$initramfs" in
+    mkinitcpio) aero7_mkinitcpio_config_has_plymouth ;;
+    dracut) aero7_dracut_config_has_plymouth ;;
+    *) return 1 ;;
+  esac
+}
+
+aero7_initramfs_image_contains_plymouth() {
+  local image boot_dir found=1
+  boot_dir="$(aero7_root_path /boot)"
+  for image in "$boot_dir"/initramfs*.img; do
+    [[ -f "$image" ]] || continue
+    if lsinitcpio "$image" 2>/dev/null | grep -Eq '(^|/)hooks/plymouth$|(^|/)usr/bin/plymouthd$'; then
+      found=0
+      break
+    fi
+  done
+  return "$found"
+}
+
 aero7_run_mkinitcpio_rebuild() {
   aero7_sudo_run mkinitcpio -P
 }

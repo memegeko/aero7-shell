@@ -221,15 +221,39 @@ aero7_doctor() {
   local bootloader initramfs
   bootloader="$(aero7_detect_bootloader)"
   initramfs="$(aero7_detect_initramfs)"
-  if [[ "$bootloader" == "unknown" || "$bootloader" == "ambiguous" ]]; then
+  if [[ "$bootloader" == "unsupported" || "$bootloader" == "ambiguous" ]]; then
     aero7_check_status "Bootloader detected" "WARNING"
   else
     aero7_check_status "$bootloader detected" "OK"
   fi
-  if [[ "$initramfs" == "unknown" || "$initramfs" == "ambiguous" ]]; then
+  if [[ "$initramfs" == "unsupported" || "$initramfs" == "ambiguous" ]]; then
     aero7_check_status "Initramfs tool detected" "WARNING"
   else
     aero7_check_status "$initramfs detected" "OK"
+  fi
+  if aero7_have plymouth-set-default-theme && plymouth-set-default-theme >/dev/null 2>&1; then
+    aero7_check_status "Plymouth theme configured" "OK"
+  elif aero7_dry_run; then
+    aero7_check_status "Plymouth theme configured" "OK"
+  else
+    aero7_check_status "Plymouth theme configured" "WARNING"
+  fi
+  if aero7_initramfs_config_has_plymouth || aero7_dry_run; then
+    aero7_check_status "Plymouth initramfs config" "OK"
+  else
+    aero7_check_status "Plymouth initramfs config" "WARNING"
+  fi
+  if ! aero7_have lsinitcpio; then
+    aero7_check_status "Plymouth initramfs image" "WARNING"
+  elif aero7_initramfs_image_contains_plymouth || aero7_dry_run; then
+    aero7_check_status "Plymouth initramfs image" "OK"
+  else
+    aero7_check_status "Plymouth initramfs image" "WARNING"
+  fi
+  if aero7_bootloader_config_has_kernel_params quiet splash || aero7_dry_run; then
+    aero7_check_status "Plymouth boot parameters" "OK"
+  else
+    aero7_check_status "Plymouth boot parameters" "WARNING"
   fi
 
   aero7_doctor_section "User Configuration"

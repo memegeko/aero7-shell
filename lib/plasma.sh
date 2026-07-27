@@ -346,19 +346,24 @@ aero7_install_light_color_scheme() {
   printf '%s\n' "$scheme"
 }
 
+aero7_preseed_light_complementary_colors_file() {
+  local file="$1"
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key BackgroundAlternate "227,227,227" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key BackgroundNormal "240,240,240" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key DecorationFocus "51,153,255" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key DecorationHover "153,204,255" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key ForegroundActive "51,153,255" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key ForegroundInactive "96,96,96" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key ForegroundLink "0,0,255" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key ForegroundNegative "218,68,83" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key ForegroundNeutral "246,116,0" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key ForegroundNormal "0,0,0" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key ForegroundPositive "39,174,96" || true
+  aero7_kwriteconfig_user --file "$file" --group "Colors:Complementary" --key ForegroundVisited "128,0,128" || true
+}
+
 aero7_preseed_light_complementary_colors() {
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key BackgroundAlternate "227,227,227" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key BackgroundNormal "240,240,240" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key DecorationFocus "51,153,255" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key DecorationHover "153,204,255" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundActive "51,153,255" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundInactive "96,96,96" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundLink "0,0,255" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundNegative "218,68,83" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundNeutral "246,116,0" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundNormal "0,0,0" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundPositive "39,174,96" || true
-  aero7_kwriteconfig_user --file kdeglobals --group "Colors:Complementary" --key ForegroundVisited "128,0,128" || true
+  aero7_preseed_light_complementary_colors_file kdeglobals
 }
 
 aero7_find_color_scheme() {
@@ -433,7 +438,7 @@ aero7_kvantum_theme_available() {
 
 aero7_find_kvantum_theme() {
   local candidate
-  for candidate in Windows7Aero Aero KvCurvesLight KvFlatLight; do
+  for candidate in KvCurvesLight KvFlatLight Windows7Aero Aero; do
     if aero7_kvantum_theme_available "$candidate"; then
       printf '%s\n' "$candidate"
       return 0
@@ -452,7 +457,7 @@ aero7_plasma_desktop_theme_available() {
 
 aero7_find_plasma_desktop_theme() {
   local candidate dir theme
-  for candidate in Seven-Black Seven Aero default breeze-light; do
+  for candidate in breeze-light default Seven Aero Seven-Black; do
     if aero7_plasma_desktop_theme_available "$candidate"; then
       printf '%s\n' "$candidate"
       return 0
@@ -471,6 +476,35 @@ aero7_find_plasma_desktop_theme() {
     done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | sort)
   done < <(aero7_plasma_desktop_theme_dirs)
   return 1
+}
+
+aero7_preseed_kdedefaults_theme_config() {
+  local color_scheme="$1"
+  local lookandfeel="$2"
+  local icon_theme="$3"
+  local desktop_theme="$4"
+  local defaults_dir defaults_kdeglobals defaults_plasmarc
+
+  defaults_dir="$AERO7_HOME/.config/kdedefaults"
+  defaults_kdeglobals="$defaults_dir/kdeglobals"
+  defaults_plasmarc="$defaults_dir/plasmarc"
+  aero7_user_run install -d -m 0755 "$defaults_dir" || true
+
+  if [[ -n "$color_scheme" ]]; then
+    aero7_kwriteconfig_user --file "$defaults_kdeglobals" --group General --key ColorScheme "$color_scheme" || true
+    aero7_preseed_light_complementary_colors_file "$defaults_kdeglobals"
+  fi
+  if [[ -n "$lookandfeel" ]]; then
+    aero7_kwriteconfig_user --file "$defaults_kdeglobals" --group KDE --key LookAndFeelPackage "$lookandfeel" || true
+  fi
+  if [[ -n "$icon_theme" ]]; then
+    aero7_kwriteconfig_user --file "$defaults_kdeglobals" --group Icons --key Theme "$icon_theme" || true
+  fi
+  aero7_kwriteconfig_user --file "$defaults_kdeglobals" --group KDE --key widgetStyle kvantum || true
+
+  if [[ -n "$desktop_theme" ]]; then
+    aero7_kwriteconfig_user --file "$defaults_plasmarc" --group Theme --key name "$desktop_theme" || true
+  fi
 }
 
 aero7_preseed_atp_user_config() {
@@ -530,6 +564,7 @@ aero7_preseed_atp_user_config() {
   if [[ -n "$lookandfeel" ]]; then
     aero7_kwriteconfig_user --file ksplashrc --group KSplash --key Theme "$lookandfeel" || true
   fi
+  aero7_preseed_kdedefaults_theme_config "$color_scheme" "$lookandfeel" "$icon_theme" "$desktop_theme"
   aero7_kwriteconfig_user --file kscreenlockerrc --group Daemon --key LockGrace 0 || true
   aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key Image "file:///usr/share/sddm/themes/sddm-theme-mod/bgtexture.jpg" || true
   aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key PreviewImage "file:///usr/share/sddm/themes/sddm-theme-mod/bgtexture.jpg" || true

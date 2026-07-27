@@ -166,16 +166,18 @@ Name=Aero
 ColorScheme=BreezeClassic
 EOF
 mkdir -p "$root/usr/share/icons/Windows 7 Aero" "$root/usr/share/icons/aero-drop"
-mkdir -p "$root/usr/share/Kvantum/Windows7Aero"
+mkdir -p "$root/usr/share/Kvantum/Windows7Aero" "$root/usr/share/Kvantum/KvCurvesLight"
 touch "$root/usr/share/Kvantum/Windows7Aero/Windows7Aero.kvconfig"
-mkdir -p "$root/usr/share/plasma/desktoptheme/Seven-Black"
+touch "$root/usr/share/Kvantum/KvCurvesLight/KvCurvesLight.kvconfig"
+mkdir -p "$root/usr/share/plasma/desktoptheme/Seven-Black" "$root/usr/share/plasma/desktoptheme/breeze-light"
 touch "$root/usr/share/plasma/desktoptheme/Seven-Black/metadata.json"
+touch "$root/usr/share/plasma/desktoptheme/breeze-light/metadata.json"
 [[ "$(aero7_find_lookandfeel_package)" == "authui7" ]] || fail "AeroThemePlasma look-and-feel package was not detected"
 [[ "$(aero7_find_color_scheme)" == "Aero" ]] || fail "Aero color scheme was not detected"
 [[ "$(aero7_find_icon_theme)" == "Windows 7 Aero" ]] || fail "Aero icon theme was not detected"
 [[ "$(aero7_find_cursor_theme)" == "aero-drop" ]] || fail "Aero cursor theme was not detected"
-[[ "$(aero7_find_kvantum_theme)" == "Windows7Aero" ]] || fail "Aero Kvantum theme was not detected"
-[[ "$(aero7_find_plasma_desktop_theme)" == "Seven-Black" ]] || fail "Aero Plasma desktop theme was not detected"
+[[ "$(aero7_find_kvantum_theme)" == "KvCurvesLight" ]] || fail "light Kvantum theme was not preferred"
+[[ "$(aero7_find_plasma_desktop_theme)" == "breeze-light" ]] || fail "light Plasma desktop theme was not preferred"
 scheme_text="$(aero7_light_color_scheme_text)"
 grep -Fq '[Colors:Complementary]' <<<"$scheme_text" || fail "Aero7 light color scheme missed complementary colors"
 grep -Fq 'BackgroundNormal=240,240,240' <<<"$scheme_text" || fail "Aero7 light color scheme kept a dark complementary background"
@@ -196,8 +198,10 @@ grep -Fq 'ForegroundNormal=0,0,0' <<<"$scheme_text" || fail "Aero7 light color s
   grep -Fq -- '--file kdeglobals --group Colors:Complementary --key BackgroundNormal 240,240,240' "$write_log" || fail "Plasma preseed did not force the complementary background light"
   grep -Fq -- '--file kdeglobals --group Colors:Complementary --key ForegroundNormal 0,0,0' "$write_log" || fail "Plasma preseed did not force readable complementary text"
   grep -Fq -- '--file kdeglobals --group KDE --key widgetStyle kvantum' "$write_log" || fail "Plasma preseed did not pin Kvantum as the widget style"
-  grep -Fq -- '--file kvantum.kvconfig --group General --key theme Windows7Aero' "$write_log" || fail "Plasma preseed did not pin the Windows7Aero Kvantum theme"
-  grep -Fq -- '--file plasmarc --group Theme --key name Seven-Black' "$write_log" || fail "Plasma preseed did not pin the upstream desktop theme"
+  grep -Fq -- '--file kvantum.kvconfig --group General --key theme KvCurvesLight' "$write_log" || fail "Plasma preseed did not pin the light Kvantum theme"
+  grep -Fq -- '--file plasmarc --group Theme --key name breeze-light' "$write_log" || fail "Plasma preseed did not pin the light desktop theme"
+  grep -Fq -- "--file $AERO7_HOME/.config/kdedefaults/kdeglobals --group General --key ColorScheme Aero7Light" "$write_log" || fail "Plasma preseed did not pin the light kdedefaults color scheme"
+  grep -Fq -- "--file $AERO7_HOME/.config/kdedefaults/plasmarc --group Theme --key name breeze-light" "$write_log" || fail "Plasma preseed did not pin the light kdedefaults desktop theme"
 )
 
 (

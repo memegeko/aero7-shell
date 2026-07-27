@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
 aero7_select_plymouth_theme() {
-  local themes
+  local themes candidate
   themes="$(plymouth-set-default-theme --list 2>/dev/null || true)"
-  awk '
-    $0 == "bgrt" || $0 == "spinner" || $0 == "fade-in" {
-      print
-      exit
-    }
-  ' <<<"$themes"
+  for candidate in spinner bgrt fade-in; do
+    if grep -Fxq "$candidate" <<<"$themes"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
 }
 
 stage_check() {
@@ -44,7 +45,14 @@ stage_run() {
 }
 
 stage_validate() {
-  [[ "${AERO7_DRY_RUN:-0}" == "1" ]] || aero7_have plymouth-set-default-theme
+  [[ "${AERO7_DRY_RUN:-0}" == "1" ]] && return 0
+  aero7_have plymouth-set-default-theme || return 1
+  plymouth-set-default-theme >/dev/null 2>&1 || return 1
+  aero7_initramfs_config_has_plymouth || return 1
+  aero7_bootloader_config_has_kernel_params quiet splash || return 1
+  if aero7_have lsinitcpio; then
+    aero7_initramfs_image_contains_plymouth || return 1
+  fi
 }
 
 stage_rollback() {

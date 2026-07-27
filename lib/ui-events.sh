@@ -13,6 +13,36 @@ aero7_event_emit() {
   aero7_tui_backend || return 0
   local event_type="$1"
   shift || true
+  local event_fd="${AERO7_EVENT_FD:-}"
+  if [[ "$event_fd" =~ ^[0-9]+$ ]]; then
+    {
+      python - "$event_type" "$@" <<'PY'
+import json
+import sys
+
+event = {"type": sys.argv[1]}
+for raw in sys.argv[2:]:
+    if "=" not in raw:
+        continue
+    key, value = raw.split("=", 1)
+    if value == "true":
+        event[key] = True
+    elif value == "false":
+        event[key] = False
+    else:
+        try:
+            if value and (value.isdigit() or (value[0] == "-" and value[1:].isdigit())):
+                event[key] = int(value)
+            else:
+                event[key] = value
+        except Exception:
+            event[key] = value
+print(json.dumps(event, ensure_ascii=False, separators=(",", ":")), flush=True)
+PY
+    } >&"$event_fd"
+    return 0
+  fi
+
   python - "$event_type" "$@" <<'PY'
 import json
 import sys

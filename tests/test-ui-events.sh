@@ -70,6 +70,15 @@ assert events[2]["current"] == 4
 assert events[2]["total"] == 8
 PY
 
+event_fd_stream="$tmp/event-fd.jsonl"
+exec {test_event_fd}>"$event_fd_stream"
+export AERO7_EVENT_FD="$test_event_fd"
+captured="$(aero7_event_action_complete 0 3)"
+exec {test_event_fd}>&-
+unset AERO7_EVENT_FD
+[[ -z "$captured" ]] || fail "event stream leaked into command substitution"
+grep -Fq '"type":"action_complete"' "$event_fd_stream" || fail "event fd did not receive event"
+
 weight_total="$(awk -F= 'NF && $1 !~ /^#/ { total += $2 } END { print total + 0 }' "$repo/config/stage-weights.conf")"
 [[ "$weight_total" -eq 100 ]] || fail "stage weights do not sum to 100: $weight_total"
 

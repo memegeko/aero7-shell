@@ -170,6 +170,11 @@ trap 'aero7_unexpected_error "$LINENO" "$?"' ERR
 
 aero7_init_paths
 
+if [[ "$AERO7_BACKEND_RUN" == "1" && "${AERO7_TUI_BACKEND:-0}" == "1" && -z "${AERO7_EVENT_FD:-}" ]]; then
+  exec {AERO7_EVENT_FD}>&1
+  export AERO7_EVENT_FD
+fi
+
 if [[ "$AERO7_UI_DIAGNOSTICS" == "1" ]]; then
   aero7_ui_diagnostics
   exit 0

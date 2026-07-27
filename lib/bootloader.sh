@@ -88,6 +88,59 @@ aero7_validate_systemd_boot_entry_file() {
   grep -q '^options[[:space:]]' "$file" || return 1
 }
 
+aero7_line_has_kernel_params() {
+  local line="$1"
+  shift
+  local param
+  for param in "$@"; do
+    [[ " $line " == *" $param "* ]] || return 1
+  done
+}
+
+aero7_grub_config_has_kernel_params() {
+  local default_file grub_cfg param_line
+  default_file="$(aero7_root_path /etc/default/grub)"
+  grub_cfg="$(aero7_root_path /boot/grub/grub.cfg)"
+
+  if [[ -f "$default_file" ]]; then
+    param_line="$(sed -n 's/^GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"$/\1/p' "$default_file" | tail -n 1)"
+    [[ -n "$param_line" ]] && aero7_line_has_kernel_params "$param_line" "$@" && return 0
+  fi
+
+  if [[ -f "$grub_cfg" ]]; then
+    while IFS= read -r param_line; do
+      aero7_line_has_kernel_params "$param_line" "$@" && return 0
+    done < <(grep -E '^[[:space:]]*linux[[:space:]]' "$grub_cfg" 2>/dev/null || true)
+  fi
+  return 1
+}
+
+aero7_systemd_boot_config_has_kernel_params() {
+  local entry entries_dir param_line
+  entries_dir="$(aero7_root_path /boot/loader/entries)"
+  for entry in "$entries_dir"/*.conf; do
+    [[ -f "$entry" ]] || continue
+    case "$(basename -- "$entry")" in
+      *fallback*|*Fallback*|*recovery*|*Recovery*) continue ;;
+    esac
+    while IFS= read -r param_line; do
+      param_line="${param_line#options }"
+      aero7_line_has_kernel_params "$param_line" "$@" && return 0
+    done < <(grep -E '^options[[:space:]]' "$entry" 2>/dev/null || true)
+  done
+  return 1
+}
+
+aero7_bootloader_config_has_kernel_params() {
+  local bootloader
+  bootloader="$(aero7_detect_bootloader)"
+  case "$bootloader" in
+    grub) aero7_grub_config_has_kernel_params "$@" ;;
+    systemd-boot) aero7_systemd_boot_config_has_kernel_params "$@" ;;
+    *) return 1 ;;
+  esac
+}
+
 aero7_configure_bootloader_for_plymouth() {
   local bootloader
   bootloader="$(aero7_detect_bootloader)"
