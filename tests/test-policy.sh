@@ -61,7 +61,7 @@ while IFS= read -r denied; do
   fi
 done < <(aero7_x11_denylist)
 
-if rg -n 'PlymouthVista|Windows Boot Manager|Starting Windows' "$repo/stages" "$repo/config" >/dev/null; then
+if grep -R -n -E 'PlymouthVista|Windows Boot Manager|Starting Windows' "$repo/stages" "$repo/config" >/dev/null; then
   fail "Plymouth stage/config references Microsoft-branded or proprietary-style boot theme assets"
 fi
 
@@ -290,6 +290,9 @@ EOF
   done
 
   HOME="$first_login_home" \
+    XDG_CONFIG_HOME="$first_login_home/.config" \
+    XDG_STATE_HOME="$first_login_home/.local/state" \
+    XDG_CACHE_HOME="$first_login_home/.cache" \
     FIRST_LOGIN_TEST_LOG="$first_login_calls" \
     PATH="$fake_bin:/usr/bin:/bin" \
     bash "$repo/modules/plasma/first-login.sh"
