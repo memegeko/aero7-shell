@@ -140,6 +140,50 @@ aero7_plymouth_hold_dropin_path() {
   printf '%s\n' "${AERO7_PLYMOUTH_HOLD_DROPIN:-$(aero7_root_path /etc/systemd/system/plymouth-quit.service.d/aero7-hold.conf)}"
 }
 
+aero7_plymouth_theme_dir() {
+  printf '%s\n' "${AERO7_PLYMOUTH_THEME_DIR:-$(aero7_root_path /usr/share/plymouth/themes/aero7-shell)}"
+}
+
+aero7_validate_plymouth_theme_source() {
+  local source_dir="$1"
+  [[ -s "$source_dir/aero7-shell.plymouth" ]] || return 1
+  [[ -s "$source_dir/aero7-shell.script" ]] || return 1
+  grep -Fxq 'ModuleName=script' "$source_dir/aero7-shell.plymouth" || return 1
+  grep -Fxq 'ImageDir=/usr/share/plymouth/themes/aero7-shell' "$source_dir/aero7-shell.plymouth" || return 1
+  grep -Fq 'Image("background.png")' "$source_dir/aero7-shell.script" || return 1
+  grep -Fq 'Image.Text("Aero7-shell"' "$source_dir/aero7-shell.script"
+}
+
+aero7_validate_installed_plymouth_theme() {
+  local theme_dir
+  theme_dir="$(aero7_plymouth_theme_dir)"
+  aero7_validate_plymouth_theme_source "$theme_dir" || return 1
+  [[ -s "$theme_dir/background.png" ]]
+}
+
+aero7_install_plymouth_theme() {
+  local repo source_dir background theme_dir
+  repo="$(aero7_repo_root)"
+  source_dir="$repo/assets/plymouth"
+  background="$repo/assets/wallpapers/aero_bg_1.png"
+  theme_dir="$(aero7_plymouth_theme_dir)"
+
+  aero7_validate_plymouth_theme_source "$source_dir" || aero7_die "Aero7 Plymouth theme source is incomplete."
+  [[ -s "$background" ]] || aero7_die "Aero7 Plymouth background is missing: $background"
+
+  if aero7_dry_run; then
+    aero7_info "Would install the Aero7-shell Plymouth theme at $theme_dir."
+    return 0
+  fi
+
+  aero7_sudo_run install -d -m 0755 "$theme_dir"
+  aero7_sudo_run install -m 0644 "$source_dir/aero7-shell.plymouth" "$theme_dir/aero7-shell.plymouth"
+  aero7_sudo_run install -m 0644 "$source_dir/aero7-shell.script" "$theme_dir/aero7-shell.script"
+  aero7_sudo_run install -m 0644 "$background" "$theme_dir/background.png"
+  aero7_validate_installed_plymouth_theme || aero7_die "Installed Aero7 Plymouth theme failed validation."
+  aero7_state_append "modified_files" "$theme_dir"
+}
+
 aero7_update_plymouth_config_file() {
   local input="$1"
   local output="$2"

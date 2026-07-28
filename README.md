@@ -122,7 +122,7 @@ product and does not ship Microsoft-owned assets.
 | Area | Included setup |
 | --- | --- |
 | Desktop | KDE Plasma 6 Wayland, AeroThemePlasma, AeroShell, layout, icons, colors, sounds, and custom wallpapers |
-| Login and boot | SDDM configuration and a distribution-provided Plymouth theme |
+| Login and boot | SDDM configuration and the original Aero7-shell Plymouth theme |
 | Applications | Compatible Aero applications through verified package recipes |
 | System tools | NetworkManager, Fastfetch, terminal compatibility commands, and `yay` when needed |
 | Integration | Reversible Wine MIME associations and Windows-like terminal conveniences |

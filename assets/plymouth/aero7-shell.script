@@ -1,0 +1,102 @@
+# Aero7-shell Plymouth theme. The background is approved project artwork.
+
+Window.SetBackgroundTopColor(0.00, 0.08, 0.24);
+Window.SetBackgroundBottomColor(0.00, 0.20, 0.48);
+
+background.original = Image("background.png");
+background.scale = Window.GetWidth() / background.original.GetWidth();
+if (background.original.GetHeight() * background.scale < Window.GetHeight())
+  background.scale = Window.GetHeight() / background.original.GetHeight();
+background.width = Math.Int(background.original.GetWidth() * background.scale);
+background.height = Math.Int(background.original.GetHeight() * background.scale);
+background.image = background.original.Scale(background.width, background.height);
+background.sprite = Sprite(background.image);
+background.x = Window.GetX() + (Window.GetWidth() - background.width) / 2;
+background.y = Window.GetY() + (Window.GetHeight() - background.height) / 2;
+background.sprite.SetPosition(background.x, background.y, -100);
+
+title.shadow_image = Image.Text("Aero7-shell", 0.02, 0.08, 0.16);
+title.shadow_sprite = Sprite(title.shadow_image);
+title.image = Image.Text("Aero7-shell", 1.0, 1.0, 1.0);
+title.sprite = Sprite(title.image);
+title.x = Window.GetX() + Window.GetWidth() / 2 - title.image.GetWidth() / 2;
+title.y = Window.GetY() + Window.GetHeight() * 0.70;
+title.shadow_sprite.SetPosition(title.x + 2, title.y + 2, 9);
+title.sprite.SetPosition(title.x, title.y, 10);
+
+subtitle.image = Image.Text("Starting Arch Linux", 0.90, 0.96, 1.0);
+subtitle.sprite = Sprite(subtitle.image);
+subtitle.x = Window.GetX() + Window.GetWidth() / 2 - subtitle.image.GetWidth() / 2;
+subtitle.y = title.y + title.image.GetHeight() + 10;
+subtitle.sprite.SetPosition(subtitle.x, subtitle.y, 10);
+
+for (index = 0; index < 5; index++)
+  {
+    dots[index].image = Image.Text("o", 0.65, 0.90, 1.0);
+    dots[index].sprite = Sprite(dots[index].image);
+    dots[index].x = Window.GetX() + Window.GetWidth() / 2 - 46 + index * 22;
+    dots[index].y = subtitle.y + subtitle.image.GetHeight() + 16;
+    dots[index].sprite.SetPosition(dots[index].x, dots[index].y, 10);
+    dots[index].sprite.SetOpacity(0.30);
+  }
+
+animation.frame = 0;
+animation.active = 0;
+
+fun refresh_callback()
+  {
+    animation.frame++;
+    if (animation.frame >= 7)
+      {
+        animation.frame = 0;
+        animation.active++;
+        if (animation.active >= 5)
+          animation.active = 0;
+      }
+
+    for (index = 0; index < 5; index++)
+      {
+        if (index == animation.active)
+          dots[index].sprite.SetOpacity(1.0);
+        else
+          dots[index].sprite.SetOpacity(0.30);
+      }
+  }
+
+Plymouth.SetRefreshFunction(refresh_callback);
+
+password.sprite = Sprite();
+password.sprite.SetPosition(Window.GetX() + 40, Window.GetY() + Window.GetHeight() - 80, 100);
+
+fun display_normal_callback()
+  {
+    password.sprite.SetOpacity(0);
+  }
+
+fun display_password_callback(prompt, bullets)
+  {
+    password.image = Image.Text(prompt, 1.0, 1.0, 1.0);
+    password.sprite.SetImage(password.image);
+    password.sprite.SetOpacity(1);
+  }
+
+Plymouth.SetDisplayNormalFunction(display_normal_callback);
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+
+message.sprite = Sprite();
+message.sprite.SetPosition(Window.GetX() + 40, Window.GetY() + 40, 100);
+
+fun display_message_callback(text)
+  {
+    message.image = Image.Text(text, 1.0, 1.0, 1.0);
+    message.sprite.SetImage(message.image);
+    message.sprite.SetOpacity(1);
+  }
+
+fun hide_message_callback(text)
+  {
+    message.sprite.SetOpacity(0);
+  }
+
+Plymouth.SetDisplayMessageFunction(display_message_callback);
+Plymouth.SetHideMessageFunction(hide_message_callback);

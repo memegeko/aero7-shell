@@ -89,4 +89,25 @@ AERO7_PLYMOUTH_HOLD_DROPIN="$plymouth_dropin"
 aero7_plymouth_visibility_configured || fail "Plymouth five-second hold was not detected"
 unset AERO7_PLYMOUTH_CONF AERO7_PLYMOUTH_HOLD_DROPIN
 
+aero7_validate_plymouth_theme_source "$repo/assets/plymouth" || fail "Aero7 Plymouth theme source did not validate"
+plymouth_theme="$tmp/plymouth-theme"
+mkdir -p "$plymouth_theme"
+cp "$repo/assets/plymouth/aero7-shell.plymouth" "$plymouth_theme/"
+cp "$repo/assets/plymouth/aero7-shell.script" "$plymouth_theme/"
+cp "$repo/assets/wallpapers/aero_bg_1.png" "$plymouth_theme/background.png"
+AERO7_PLYMOUTH_THEME_DIR="$plymouth_theme"
+aero7_validate_installed_plymouth_theme || fail "installed Aero7 Plymouth theme fixture did not validate"
+unset AERO7_PLYMOUTH_THEME_DIR
+
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_PLYMOUTH_THEME_DIR="$tmp/installed-plymouth-theme"
+  aero7_sudo_run() { "$@"; }
+  aero7_state_append() { :; }
+  aero7_install_plymouth_theme
+  aero7_validate_installed_plymouth_theme || fail "Aero7 Plymouth theme installer did not produce a valid theme"
+  cmp -s "$repo/assets/wallpapers/aero_bg_1.png" "$AERO7_PLYMOUTH_THEME_DIR/background.png" ||
+    fail "Aero7 Plymouth theme installer did not install the approved background"
+)
+
 printf 'test-detection: ok\n'

@@ -65,6 +65,16 @@ if grep -R -n -E 'PlymouthVista|Windows Boot Manager|Starting Windows' "$repo/st
   fail "Plymouth stage/config references Microsoft-branded or proprietary-style boot theme assets"
 fi
 
+(
+  unset -f stage_check stage_run stage_validate stage_rollback
+  # shellcheck source=../stages/100-plymouth.sh
+  source "$repo/stages/100-plymouth.sh"
+  plymouth-set-default-theme() {
+    printf '%s\n' spinner aero7-shell fade-in
+  }
+  [[ "$(aero7_select_plymouth_theme)" == "aero7-shell" ]] || fail "Aero7 Plymouth theme was not preferred"
+)
+
 for disabled in aero-dolphin aero-gwenview control-panel; do
   recipe="$repo/recipes/$disabled.sh"
   aero7_recipe_load "$recipe"

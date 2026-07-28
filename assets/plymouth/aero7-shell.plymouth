@@ -1,0 +1,9 @@
+[Plymouth Theme]
+Name=Aero7-shell
+Description=Aero7-shell boot splash using original project artwork.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/aero7-shell
+ScriptFile=/usr/share/plymouth/themes/aero7-shell/aero7-shell.script
+ConsoleLogBackgroundColor=0x001d48

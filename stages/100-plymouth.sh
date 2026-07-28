@@ -3,7 +3,7 @@
 aero7_select_plymouth_theme() {
   local themes candidate
   themes="$(plymouth-set-default-theme --list 2>/dev/null || true)"
-  for candidate in spinner bgrt fade-in; do
+  for candidate in aero7-shell spinner bgrt fade-in; do
     if grep -Fxq "$candidate" <<<"$themes"; then
       printf '%s\n' "$candidate"
       return 0
@@ -18,9 +18,10 @@ stage_check() {
 
 stage_run() {
   aero7_pacman_install_needed plymouth
+  aero7_install_plymouth_theme
 
   if aero7_dry_run; then
-    aero7_info "Would enable Plymouth, hold its boot splash for five seconds, and configure initramfs and bootloader."
+    aero7_info "Would select the Aero7-shell Plymouth theme, hold it for five seconds, and configure initramfs and bootloader."
     aero7_configure_plymouth_visibility
     aero7_configure_initramfs_for_plymouth
     aero7_configure_bootloader_for_plymouth
@@ -49,7 +50,8 @@ stage_run() {
 stage_validate() {
   [[ "${AERO7_DRY_RUN:-0}" == "1" ]] && return 0
   aero7_have plymouth-set-default-theme || return 1
-  plymouth-set-default-theme >/dev/null 2>&1 || return 1
+  aero7_validate_installed_plymouth_theme || return 1
+  [[ "$(plymouth-set-default-theme 2>/dev/null)" == "aero7-shell" ]] || return 1
   aero7_plymouth_visibility_configured || return 1
   aero7_initramfs_config_has_plymouth || return 1
   aero7_bootloader_config_has_kernel_params quiet splash || return 1

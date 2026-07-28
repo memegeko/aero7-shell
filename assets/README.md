@@ -6,6 +6,8 @@ Current distributed assets:
 
 - `assets/avatars/aero7-user.png`
 - `assets/fastfetch/aero7.jsonc`
+- `assets/plymouth/aero7-shell.plymouth`
+- `assets/plymouth/aero7-shell.script`
 - `assets/wallpapers/aero_bg_1.png`
 - `assets/wallpapers/aero_bg_2.jpeg`
 - `assets/wallpapers/aero_bg_3.jpg`

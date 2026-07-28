@@ -6,6 +6,8 @@ Only assets listed here may be distributed by Aero7-shell.
 | --- | --- | --- | --- | --- | --- |
 | `assets/avatars/aero7-user.png` | Aero7-shell contributors | Original Aero7-shell project artwork generated from an original geometric design | MIT | Yes | Preserve repository licence notice |
 | `assets/fastfetch/aero7.jsonc` | Aero7-shell contributors | Original Aero7-shell Fastfetch configuration | MIT | Yes | Preserve repository licence notice |
+| `assets/plymouth/aero7-shell.plymouth` | Aero7-shell contributors | Original Aero7-shell Plymouth theme definition | MIT | Yes | Preserve repository licence notice |
+| `assets/plymouth/aero7-shell.script` | Aero7-shell contributors | Original Aero7-shell Plymouth animation script | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero_bg_1.png` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero_bg_2.jpeg` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero_bg_3.jpg` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
