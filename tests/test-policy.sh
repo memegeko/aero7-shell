@@ -61,8 +61,8 @@ while IFS= read -r denied; do
   fi
 done < <(aero7_x11_denylist)
 
-if grep -R -n -E 'PlymouthVista|Windows Boot Manager|Starting Windows' "$repo/stages" "$repo/config" >/dev/null; then
-  fail "Plymouth stage/config references Microsoft-branded or proprietary-style boot theme assets"
+if [[ -d "$repo/assets/plymouth" ]] && find "$repo/assets/plymouth" -type f -print -quit | grep -q .; then
+  fail "PlymouthVista proprietary assets were vendored into Aero7-shell"
 fi
 
 (
@@ -70,10 +70,14 @@ fi
   # shellcheck source=../stages/100-plymouth.sh
   source "$repo/stages/100-plymouth.sh"
   plymouth-set-default-theme() {
-    printf '%s\n' spinner aero7-shell fade-in
+    printf '%s\n' spinner PlymouthVista fade-in
   }
-  [[ "$(aero7_select_plymouth_theme)" == "aero7-shell" ]] || fail "Aero7 Plymouth theme was not preferred"
+  [[ "$(aero7_select_plymouth_theme)" == "PlymouthVista" ]] || fail "PlymouthVista was not preferred"
 )
+
+[[ "$AERO7_PLYMOUTH_VISTA_REPOSITORY" == "https://github.com/furkrn/PlymouthVista.git" ]] ||
+  fail "PlymouthVista repository is not the requested upstream"
+[[ "$AERO7_PLYMOUTH_VISTA_REF" =~ ^[0-9a-f]{40}$ ]] || fail "PlymouthVista revision is not pinned"
 
 for disabled in aero-dolphin aero-gwenview control-panel; do
   recipe="$repo/recipes/$disabled.sh"

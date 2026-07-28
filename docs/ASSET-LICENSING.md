@@ -6,8 +6,6 @@ Only assets listed here may be distributed by Aero7-shell.
 | --- | --- | --- | --- | --- | --- |
 | `assets/avatars/aero7-user.png` | Aero7-shell contributors | Original Aero7-shell project artwork generated from an original geometric design | MIT | Yes | Preserve repository licence notice |
 | `assets/fastfetch/aero7.jsonc` | Aero7-shell contributors | Original Aero7-shell Fastfetch configuration | MIT | Yes | Preserve repository licence notice |
-| `assets/plymouth/aero7-shell.plymouth` | Aero7-shell contributors | Original Aero7-shell Plymouth theme definition | MIT | Yes | Preserve repository licence notice |
-| `assets/plymouth/aero7-shell.script` | Aero7-shell contributors | Original Aero7-shell Plymouth animation script | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero_bg_1.png` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero_bg_2.jpeg` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero_bg_3.jpg` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
@@ -29,3 +27,13 @@ The following local asset types are not distributed and must not be committed:
 - Any image whose source and licence cannot be verified
 
 Only the custom Aero7-shell wallpapers listed above are approved for distribution and installation.
+
+## External Runtime Theme
+
+The installer downloads
+[`furkrn/PlymouthVista`](https://github.com/furkrn/PlymouthVista) directly from
+its upstream GitHub repository at a pinned revision. Aero7-shell does not
+include or redistribute that repository's images or Microsoft fonts. The
+upstream project states that its bundled image resources belong to Microsoft
+Corporation. Its MIT licence covers the software but does not grant rights to
+Microsoft assets.

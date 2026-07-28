@@ -62,13 +62,13 @@ if [[ -e /etc/systemd/system/plymouth-quit.service.d/aero7-hold.conf ]]; then
   aero7_safe_remove_file /etc/systemd/system/plymouth-quit.service.d/aero7-hold.conf /etc/systemd/system/plymouth-quit.service.d
   aero7_sudo_run systemctl daemon-reload
 fi
-if [[ -d /usr/share/plymouth/themes/aero7-shell ]]; then
+if [[ -d /usr/share/plymouth/themes/PlymouthVista ]]; then
   rebuild_plymouth=0
-  if aero7_have plymouth-set-default-theme && [[ "$(plymouth-set-default-theme 2>/dev/null || true)" == "aero7-shell" ]]; then
+  if aero7_have plymouth-set-default-theme && [[ "$(plymouth-set-default-theme 2>/dev/null || true)" == "PlymouthVista" ]]; then
     aero7_sudo_run plymouth-set-default-theme spinner
     rebuild_plymouth=1
   fi
-  aero7_safe_remove_tree /usr/share/plymouth/themes/aero7-shell /usr/share/plymouth/themes
+  aero7_safe_remove_tree /usr/share/plymouth/themes/PlymouthVista /usr/share/plymouth/themes
   if [[ "$rebuild_plymouth" -eq 1 ]]; then
     if aero7_have mkinitcpio; then
       aero7_sudo_run mkinitcpio -P

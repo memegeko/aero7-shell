@@ -89,25 +89,28 @@ AERO7_PLYMOUTH_HOLD_DROPIN="$plymouth_dropin"
 aero7_plymouth_visibility_configured || fail "Plymouth five-second hold was not detected"
 unset AERO7_PLYMOUTH_CONF AERO7_PLYMOUTH_HOLD_DROPIN
 
-aero7_validate_plymouth_theme_source "$repo/assets/plymouth" || fail "Aero7 Plymouth theme source did not validate"
-plymouth_theme="$tmp/plymouth-theme"
-mkdir -p "$plymouth_theme"
-cp "$repo/assets/plymouth/aero7-shell.plymouth" "$plymouth_theme/"
-cp "$repo/assets/plymouth/aero7-shell.script" "$plymouth_theme/"
-cp "$repo/assets/wallpapers/aero_bg_1.png" "$plymouth_theme/background.png"
-AERO7_PLYMOUTH_THEME_DIR="$plymouth_theme"
-aero7_validate_installed_plymouth_theme || fail "installed Aero7 Plymouth theme fixture did not validate"
-unset AERO7_PLYMOUTH_THEME_DIR
+plymouth_source="$tmp/plymouth-vista-source"
+mkdir -p "$plymouth_source/src" "$plymouth_source/images"
+printf 'MIT\n' >"$plymouth_source/LICENSE"
+printf 'ModuleName=script\n' >"$plymouth_source/PlymouthVista.plymouth"
+printf '#!/usr/bin/env bash\n' >"$plymouth_source/compile.sh"
+printf '#!/usr/bin/env bash\n' >"$plymouth_source/pv_conf.sh"
+chmod +x "$plymouth_source/compile.sh" "$plymouth_source/pv_conf.sh"
+printf 'SevenBootScreenNew\n' >"$plymouth_source/src/boot7.sp"
+printf 'main\n' >"$plymouth_source/src/main.sp"
+printf 'frame\n' >"$plymouth_source/images/flag0.png"
+printf 'frame\n' >"$plymouth_source/images/flag104.png"
+aero7_validate_plymouth_vista_source "$plymouth_source" || fail "PlymouthVista source fixture did not validate"
 
-(
-  export AERO7_DRY_RUN=0
-  export AERO7_PLYMOUTH_THEME_DIR="$tmp/installed-plymouth-theme"
-  aero7_sudo_run() { "$@"; }
-  aero7_state_append() { :; }
-  aero7_install_plymouth_theme
-  aero7_validate_installed_plymouth_theme || fail "Aero7 Plymouth theme installer did not produce a valid theme"
-  cmp -s "$repo/assets/wallpapers/aero_bg_1.png" "$AERO7_PLYMOUTH_THEME_DIR/background.png" ||
-    fail "Aero7 Plymouth theme installer did not install the approved background"
-)
+plymouth_theme="$tmp/plymouth-vista-theme"
+mkdir -p "$plymouth_theme/images"
+printf 'MIT\n' >"$plymouth_theme/LICENSE"
+printf 'ModuleName=script\n' >"$plymouth_theme/PlymouthVista.plymouth"
+printf 'global.UseLegacyBootScreen = 0;\nglobal.AuthuiStyle = "7";\n' >"$plymouth_theme/PlymouthVista.script"
+printf 'frame\n' >"$plymouth_theme/images/flag0.png"
+printf 'frame\n' >"$plymouth_theme/images/flag104.png"
+AERO7_PLYMOUTH_THEME_DIR="$plymouth_theme"
+aero7_validate_installed_plymouth_vista_theme || fail "installed PlymouthVista fixture did not validate"
+unset AERO7_PLYMOUTH_THEME_DIR
 
 printf 'test-detection: ok\n'

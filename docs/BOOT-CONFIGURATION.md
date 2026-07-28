@@ -10,10 +10,13 @@ Plymouth kernel parameters are merged without duplication:
 quiet splash
 ```
 
-The installer selects the project-owned `aero7-shell` Plymouth theme. It uses
-the approved `aero_bg_1.png` artwork and an original loading animation; no
-Microsoft boot artwork or logos are included. Plymouth is configured with
-`ShowDelay=0` so the splash starts immediately.
+The installer downloads
+[`furkrn/PlymouthVista`](https://github.com/furkrn/PlymouthVista) from its
+upstream GitHub repository at a pinned revision, configures its Windows 7 mode
+without prompts, and selects `PlymouthVista`. Its files are not included in the
+Aero7-shell repository. The upstream project states that its image resources
+belong to Microsoft Corporation. Plymouth is configured with `ShowDelay=0` so
+the splash starts immediately.
 The installer also adds
 `/etc/systemd/system/plymouth-quit.service.d/aero7-hold.conf`, which waits five
 seconds before Plymouth exits and SDDM starts. This makes the splash visible on

@@ -122,11 +122,15 @@ product and does not ship Microsoft-owned assets.
 | Area | Included setup |
 | --- | --- |
 | Desktop | KDE Plasma 6 Wayland, AeroThemePlasma, AeroShell, layout, icons, colors, sounds, and custom wallpapers |
-| Login and boot | SDDM configuration and the original Aero7-shell Plymouth theme |
+| Login and boot | SDDM configuration and [PlymouthVista](https://github.com/furkrn/PlymouthVista) fetched directly from upstream |
 | Applications | Compatible Aero applications through verified package recipes |
 | System tools | NetworkManager, Fastfetch, terminal compatibility commands, and `yay` when needed |
 | Integration | Reversible Wine MIME associations and Windows-like terminal conveniences |
 | Recovery | Configuration backups, stage checkpoints, logs, validation, repair, restore, and uninstall commands |
+
+PlymouthVista is downloaded at install time from a pinned upstream revision and
+is not stored in this repository. Its upstream README states that its image
+resources belong to Microsoft Corporation.
 
 Aero7-shell does **not** partition disks, install Arch Linux itself, replace the
 bootloader, enable autologin, create passwordless sudo rules, force GPU driver

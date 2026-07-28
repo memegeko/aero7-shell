@@ -5,6 +5,9 @@ if [[ -n "${AERO7_INITRAMFS_LOADED:-}" ]]; then
 fi
 AERO7_INITRAMFS_LOADED=1
 
+AERO7_PLYMOUTH_VISTA_REPOSITORY="${AERO7_PLYMOUTH_VISTA_REPOSITORY:-https://github.com/furkrn/PlymouthVista.git}"
+AERO7_PLYMOUTH_VISTA_REF="${AERO7_PLYMOUTH_VISTA_REF:-e2b9605a7b4d649bb0e314cce8bbe9912633cfef}"
+
 aero7_detect_initramfs() {
   local mk=0
   local dr=0
@@ -141,46 +144,145 @@ aero7_plymouth_hold_dropin_path() {
 }
 
 aero7_plymouth_theme_dir() {
-  printf '%s\n' "${AERO7_PLYMOUTH_THEME_DIR:-$(aero7_root_path /usr/share/plymouth/themes/aero7-shell)}"
+  printf '%s\n' "${AERO7_PLYMOUTH_THEME_DIR:-$(aero7_root_path /usr/share/plymouth/themes/PlymouthVista)}"
 }
 
-aero7_validate_plymouth_theme_source() {
+aero7_validate_plymouth_vista_source() {
   local source_dir="$1"
-  [[ -s "$source_dir/aero7-shell.plymouth" ]] || return 1
-  [[ -s "$source_dir/aero7-shell.script" ]] || return 1
-  grep -Fxq 'ModuleName=script' "$source_dir/aero7-shell.plymouth" || return 1
-  grep -Fxq 'ImageDir=/usr/share/plymouth/themes/aero7-shell' "$source_dir/aero7-shell.plymouth" || return 1
-  grep -Fq 'Image("background.png")' "$source_dir/aero7-shell.script" || return 1
-  grep -Fq 'Image.Text("Aero7-shell"' "$source_dir/aero7-shell.script"
+  [[ -s "$source_dir/LICENSE" ]] || return 1
+  [[ -s "$source_dir/PlymouthVista.plymouth" ]] || return 1
+  [[ -x "$source_dir/compile.sh" ]] || return 1
+  [[ -x "$source_dir/pv_conf.sh" ]] || return 1
+  [[ -s "$source_dir/src/boot7.sp" ]] || return 1
+  [[ -s "$source_dir/src/main.sp" ]] || return 1
+  [[ -s "$source_dir/images/flag0.png" ]] || return 1
+  [[ -s "$source_dir/images/flag104.png" ]] || return 1
+  grep -Fxq 'ModuleName=script' "$source_dir/PlymouthVista.plymouth" || return 1
+  grep -Fq 'SevenBootScreenNew' "$source_dir/src/boot7.sp"
 }
 
-aero7_validate_installed_plymouth_theme() {
+aero7_validate_installed_plymouth_vista_theme() {
   local theme_dir
   theme_dir="$(aero7_plymouth_theme_dir)"
-  aero7_validate_plymouth_theme_source "$theme_dir" || return 1
-  [[ -s "$theme_dir/background.png" ]]
+  [[ -s "$theme_dir/LICENSE" ]] || return 1
+  [[ -s "$theme_dir/PlymouthVista.plymouth" ]] || return 1
+  [[ -s "$theme_dir/PlymouthVista.script" ]] || return 1
+  [[ -s "$theme_dir/images/flag0.png" ]] || return 1
+  [[ -s "$theme_dir/images/flag104.png" ]] || return 1
+  grep -Fxq 'ModuleName=script' "$theme_dir/PlymouthVista.plymouth" || return 1
+  grep -Fq 'global.UseLegacyBootScreen = 0;' "$theme_dir/PlymouthVista.script" || return 1
+  grep -Fq 'global.AuthuiStyle = "7";' "$theme_dir/PlymouthVista.script"
 }
 
-aero7_install_plymouth_theme() {
-  local repo source_dir background theme_dir
-  repo="$(aero7_repo_root)"
-  source_dir="$repo/assets/plymouth"
-  background="$repo/assets/wallpapers/aero_bg_1.png"
-  theme_dir="$(aero7_plymouth_theme_dir)"
+aero7_plymouth_vista_source_dir() {
+  printf '%s/sources/PlymouthVista-%s\n' "$AERO7_CACHE_DIR" "${AERO7_PLYMOUTH_VISTA_REF:0:12}"
+}
 
-  aero7_validate_plymouth_theme_source "$source_dir" || aero7_die "Aero7 Plymouth theme source is incomplete."
-  [[ -s "$background" ]] || aero7_die "Aero7 Plymouth background is missing: $background"
+aero7_fetch_plymouth_vista_source() {
+  local source_dir remote head
+  source_dir="$(aero7_plymouth_vista_source_dir)"
 
   if aero7_dry_run; then
-    aero7_info "Would install the Aero7-shell Plymouth theme at $theme_dir."
+    aero7_info "Would download PlymouthVista revision $AERO7_PLYMOUTH_VISTA_REF from $AERO7_PLYMOUTH_VISTA_REPOSITORY."
     return 0
   fi
 
+  aero7_have git || aero7_die "git is required to download PlymouthVista."
+  aero7_user_run install -d -m 0755 "$AERO7_CACHE_DIR/sources"
+  if [[ ! -d "$source_dir/.git" ]]; then
+    [[ ! -e "$source_dir" ]] || aero7_die "PlymouthVista cache path exists but is not a Git checkout: $source_dir"
+    aero7_user_run git init "$source_dir"
+  fi
+
+  remote="$(git -C "$source_dir" remote get-url origin 2>/dev/null || true)"
+  if [[ -z "$remote" ]]; then
+    aero7_user_run git -C "$source_dir" remote add origin "$AERO7_PLYMOUTH_VISTA_REPOSITORY"
+  elif [[ "$remote" != "$AERO7_PLYMOUTH_VISTA_REPOSITORY" ]]; then
+    aero7_die "PlymouthVista cache uses an unexpected upstream URL: $remote"
+  fi
+
+  aero7_user_run git -C "$source_dir" fetch --depth 1 origin "$AERO7_PLYMOUTH_VISTA_REF"
+  aero7_user_run git -C "$source_dir" checkout --detach "$AERO7_PLYMOUTH_VISTA_REF"
+  head="$(git -C "$source_dir" rev-parse HEAD 2>/dev/null || true)"
+  [[ "$head" == "$AERO7_PLYMOUTH_VISTA_REF" ]] || aero7_die "PlymouthVista revision verification failed."
+  aero7_validate_plymouth_vista_source "$source_dir" || aero7_die "Downloaded PlymouthVista source failed validation."
+}
+
+aero7_configure_plymouth_vista_script() {
+  local source_dir="$1"
+  local script="$source_dir/PlymouthVista.script"
+  local old_theme="$2"
+  local key value
+  local -a settings=(
+    UseLegacyBootScreen 0
+    UseShadow 1
+    AuthuiStyle 7
+    Pref 3
+    UseHibernation 0
+    DisableWall 0
+    BootSlowdown 0
+    OldPlymouthTheme "$old_theme"
+  )
+
+  # shellcheck disable=SC2016
+  aero7_user_run bash -lc 'cd -- "$1" && ./compile.sh' _ "$source_dir"
+  [[ -s "$script" ]] || aero7_die "PlymouthVista compilation did not produce PlymouthVista.script."
+
+  while [[ "${#settings[@]}" -gt 0 ]]; do
+    key="${settings[0]}"
+    value="${settings[1]}"
+    settings=("${settings[@]:2}")
+    aero7_user_run "$source_dir/pv_conf.sh" -s "$key" -v "$value" -i "$script"
+  done
+}
+
+aero7_generate_plymouth_vista_text_images() {
+  local source_dir="$1"
+  local font_file font_family generator
+
+  aero7_have magick || aero7_die "ImageMagick is required for the PlymouthVista Windows 7 variant."
+  font_file="$(fc-match --format='%{file}' 'Segoe UI' 2>/dev/null || true)"
+  font_family="$(fc-match --format='%{family[0]}' 'Segoe UI' 2>/dev/null || true)"
+  [[ -f "$font_file" ]] || aero7_die "No system font is available for PlymouthVista text rendering."
+  if [[ "$font_family" != "Segoe UI" ]]; then
+    aero7_warn "Segoe UI is not installed; PlymouthVista will use the system fallback font $font_family."
+  fi
+
+  generator="$source_dir/.aero7-gen-blur.sh"
+  awk -v font="$font_file" '
+    /^FONT=/ { print "FONT=\"" font "\""; next }
+    { print }
+  ' "$source_dir/gen_blur.sh" >"$generator"
+  chmod 0755 "$generator"
+  # shellcheck disable=SC2016
+  aero7_user_run bash -lc 'cd -- "$1" && bash "$2"' _ "$source_dir" "$generator"
+}
+
+aero7_install_plymouth_theme() {
+  local source_dir theme_dir old_theme
+  source_dir="$(aero7_plymouth_vista_source_dir)"
+  theme_dir="$(aero7_plymouth_theme_dir)"
+
+  if aero7_dry_run; then
+    aero7_fetch_plymouth_vista_source
+    aero7_info "Would configure and install PlymouthVista in Windows 7 mode at $theme_dir."
+    return 0
+  fi
+
+  aero7_fetch_plymouth_vista_source
+  old_theme="$(plymouth-set-default-theme 2>/dev/null || printf '%s\n' spinner)"
+  aero7_configure_plymouth_vista_script "$source_dir" "$old_theme"
+  aero7_generate_plymouth_vista_text_images "$source_dir"
+
+  if [[ -d "$theme_dir" ]]; then
+    aero7_safe_remove_tree "$theme_dir" "/usr/share/plymouth/themes"
+  fi
   aero7_sudo_run install -d -m 0755 "$theme_dir"
-  aero7_sudo_run install -m 0644 "$source_dir/aero7-shell.plymouth" "$theme_dir/aero7-shell.plymouth"
-  aero7_sudo_run install -m 0644 "$source_dir/aero7-shell.script" "$theme_dir/aero7-shell.script"
-  aero7_sudo_run install -m 0644 "$background" "$theme_dir/background.png"
-  aero7_validate_installed_plymouth_theme || aero7_die "Installed Aero7 Plymouth theme failed validation."
+  aero7_sudo_run install -m 0644 "$source_dir/LICENSE" "$theme_dir/LICENSE"
+  aero7_sudo_run install -m 0644 "$source_dir/PlymouthVista.plymouth" "$theme_dir/PlymouthVista.plymouth"
+  aero7_sudo_run install -m 0644 "$source_dir/PlymouthVista.script" "$theme_dir/PlymouthVista.script"
+  aero7_sudo_run cp -a "$source_dir/images" "$theme_dir/"
+  aero7_validate_installed_plymouth_vista_theme || aero7_die "Installed PlymouthVista theme failed validation."
   aero7_state_append "modified_files" "$theme_dir"
 }
 
