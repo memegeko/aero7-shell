@@ -99,6 +99,81 @@ aero7_kwriteconfig_root() {
   aero7_sudo_run kwriteconfig6 "${args[@]}"
 }
 
+aero7_first_login_config_path() {
+  printf '%s/.config/aero7-shell/first-loginrc\n' "$AERO7_HOME"
+}
+
+aero7_prepare_first_login_apply() {
+  if aero7_dry_run; then
+    aero7_info "Would schedule deferred Plasma setup for the first graphical login."
+    return 0
+  fi
+
+  local runner_source runner unit wants unit_tmp
+  runner_source="$AERO7_ROOT/modules/plasma/first-login.sh"
+  runner="$AERO7_HOME/.local/lib/aero7-shell/first-login"
+  unit="$AERO7_HOME/.config/systemd/user/aero7-first-login.service"
+  wants="$AERO7_HOME/.config/systemd/user/plasma-workspace.target.wants"
+  [[ -f "$runner_source" ]] || {
+    aero7_warn "Deferred Plasma setup helper is missing: $runner_source"
+    return 1
+  }
+
+  aero7_user_run install -d -m 0755 "$(dirname -- "$runner")" "$(dirname -- "$unit")" "$wants"
+  aero7_user_run install -m 0755 "$runner_source" "$runner"
+  aero7_user_run rm -f -- "$AERO7_HOME/.local/state/aero7-shell/first-login-applied"
+
+  unit_tmp="$(mktemp)" || return 1
+  cat >"$unit_tmp" <<'EOF'
+[Unit]
+Description=Apply Aero7-shell desktop settings at the first Plasma login
+After=plasma-plasmashell.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/lib/aero7-shell/first-login
+
+[Install]
+WantedBy=plasma-workspace.target
+EOF
+  aero7_user_run install -m 0644 "$unit_tmp" "$unit"
+  rm -f -- "$unit_tmp"
+  aero7_user_run ln -sfn ../aero7-first-login.service "$wants/aero7-first-login.service"
+
+  aero7_state_append "modified_user_files" "$runner"
+  aero7_state_append "modified_user_files" "$unit"
+  aero7_state_append "modified_user_files" "$wants/aero7-first-login.service"
+}
+
+aero7_schedule_first_login_action() {
+  local action="$1"
+  local enabled="${2:-true}"
+  local config
+
+  aero7_prepare_first_login_apply || return 1
+  config="$(aero7_first_login_config_path)"
+  aero7_user_run install -d -m 0755 "$(dirname -- "$config")"
+  aero7_kwriteconfig_user --file "$config" --group Actions --key "$action" --type bool "$enabled" || return 1
+  aero7_state_append "modified_user_files" "$config"
+}
+
+aero7_schedule_first_login_theme() {
+  local lookandfeel="$1"
+  local color_scheme="$2"
+  local desktop_theme="$3"
+  local kvantum_theme="$4"
+  local cursor_theme="$5"
+  local config
+
+  aero7_schedule_first_login_action Theme true || return 1
+  config="$(aero7_first_login_config_path)"
+  aero7_kwriteconfig_user --file "$config" --group Theme --key LookAndFeel "$lookandfeel" || true
+  aero7_kwriteconfig_user --file "$config" --group Theme --key ColorScheme "$color_scheme" || true
+  aero7_kwriteconfig_user --file "$config" --group Theme --key DesktopTheme "$desktop_theme" || true
+  aero7_kwriteconfig_user --file "$config" --group Theme --key KvantumTheme "$kvantum_theme" || true
+  aero7_kwriteconfig_user --file "$config" --group Theme --key CursorTheme "$cursor_theme" || true
+}
+
 aero7_plasma_wayland_session_files() {
   local dir
   dir="$(aero7_plasma_root_path /usr/share/wayland-sessions)"
@@ -438,7 +513,7 @@ aero7_kvantum_theme_available() {
 
 aero7_find_kvantum_theme() {
   local candidate
-  for candidate in KvCurvesLight KvFlatLight Windows7Aero Aero; do
+  for candidate in Windows7Aero KvCurvesLight KvFlatLight Aero; do
     if aero7_kvantum_theme_available "$candidate"; then
       printf '%s\n' "$candidate"
       return 0
@@ -592,6 +667,11 @@ aero7_preseed_atp_user_config() {
   for effect in blur contrast login logout maximize scale squash slide fade slidingpopups slidingnotifications dialogparent fadingpopups windowaperture; do
     aero7_kwriteconfig_user --file kwinrc --group Plugins --key "${effect}Enabled" --type bool false || true
   done
+
+  if ! aero7_graphical_session_available; then
+    aero7_schedule_first_login_theme "$lookandfeel" "$color_scheme" "$desktop_theme" "$kvantum_theme" "$cursor_theme" || \
+      aero7_warn "Could not schedule Aero theme application for the first Plasma login."
+  fi
 }
 
 aero7_mark_atp_ootb_complete() {
@@ -703,14 +783,17 @@ EOF
   local qdbus_cmd
   if ! aero7_graphical_session_available; then
     aero7_info "No graphical session detected; Plasma layout script was staged for the next desktop session."
+    aero7_schedule_first_login_action Layout true || aero7_warn "Could not schedule the staged Plasma layout."
     aero7_state_set "logout_recommended" "yes"
   elif qdbus_cmd="$(aero7_qdbus_command)"; then
     aero7_user_run "$qdbus_cmd" org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$script")" || {
       aero7_warn "Plasma layout script could not be applied. Log out and apply manually after installation."
+      aero7_schedule_first_login_action Layout true || true
       aero7_state_set "logout_recommended" "yes"
     }
   else
     aero7_warn "qdbus6/qdbus is unavailable; cannot apply Plasma layout automatically."
+    aero7_schedule_first_login_action Layout true || true
     aero7_state_set "logout_recommended" "yes"
   fi
 }

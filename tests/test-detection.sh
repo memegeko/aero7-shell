@@ -68,4 +68,25 @@ AERO7_TEST_ROOT="$tmp/dr"
 printf 'add_dracutmodules+=" plymouth "\n' >"$tmp/dr/etc/dracut.conf.d/aero7-plymouth.conf"
 aero7_initramfs_config_has_plymouth || fail "dracut helper did not detect Plymouth drop-in"
 
+plymouth_source="$tmp/plymouthd.conf"
+plymouth_updated="$tmp/plymouthd-updated.conf"
+cat >"$plymouth_source" <<'EOF'
+[Daemon]
+Theme=spinner
+ShowDelay=7
+DeviceTimeout=8
+EOF
+aero7_update_plymouth_config_file "$plymouth_source" "$plymouth_updated"
+aero7_validate_plymouth_config "$plymouth_updated" || fail "Plymouth immediate-show config did not validate"
+grep -Fxq 'Theme=spinner' "$plymouth_updated" || fail "Plymouth config update lost the selected theme"
+grep -Fxq 'DeviceTimeout=8' "$plymouth_updated" || fail "Plymouth config update lost unrelated settings"
+[[ "$(grep -Fxc 'ShowDelay=0' "$plymouth_updated")" -eq 1 ]] || fail "Plymouth config update did not set one immediate show delay"
+
+plymouth_dropin="$tmp/aero7-hold.conf"
+printf '[Service]\nExecStartPre=/usr/bin/sleep 5\n' >"$plymouth_dropin"
+AERO7_PLYMOUTH_CONF="$plymouth_updated"
+AERO7_PLYMOUTH_HOLD_DROPIN="$plymouth_dropin"
+aero7_plymouth_visibility_configured || fail "Plymouth five-second hold was not detected"
+unset AERO7_PLYMOUTH_CONF AERO7_PLYMOUTH_HOLD_DROPIN
+
 printf 'test-detection: ok\n'

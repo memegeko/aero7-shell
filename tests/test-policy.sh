@@ -176,7 +176,7 @@ touch "$root/usr/share/plasma/desktoptheme/breeze-light/metadata.json"
 [[ "$(aero7_find_color_scheme)" == "Aero" ]] || fail "Aero color scheme was not detected"
 [[ "$(aero7_find_icon_theme)" == "Windows 7 Aero" ]] || fail "Aero icon theme was not detected"
 [[ "$(aero7_find_cursor_theme)" == "aero-drop" ]] || fail "Aero cursor theme was not detected"
-[[ "$(aero7_find_kvantum_theme)" == "KvCurvesLight" ]] || fail "light Kvantum theme was not preferred"
+[[ "$(aero7_find_kvantum_theme)" == "Windows7Aero" ]] || fail "Aero Kvantum theme was not preferred"
 [[ "$(aero7_find_plasma_desktop_theme)" == "breeze-light" ]] || fail "light Plasma desktop theme was not preferred"
 scheme_text="$(aero7_light_color_scheme_text)"
 grep -Fq '[Colors:Complementary]' <<<"$scheme_text" || fail "Aero7 light color scheme missed complementary colors"
@@ -198,10 +198,11 @@ grep -Fq 'ForegroundNormal=0,0,0' <<<"$scheme_text" || fail "Aero7 light color s
   grep -Fq -- '--file kdeglobals --group Colors:Complementary --key BackgroundNormal 240,240,240' "$write_log" || fail "Plasma preseed did not force the complementary background light"
   grep -Fq -- '--file kdeglobals --group Colors:Complementary --key ForegroundNormal 0,0,0' "$write_log" || fail "Plasma preseed did not force readable complementary text"
   grep -Fq -- '--file kdeglobals --group KDE --key widgetStyle kvantum' "$write_log" || fail "Plasma preseed did not pin Kvantum as the widget style"
-  grep -Fq -- '--file kvantum.kvconfig --group General --key theme KvCurvesLight' "$write_log" || fail "Plasma preseed did not pin the light Kvantum theme"
+  grep -Fq -- '--file kvantum.kvconfig --group General --key theme Windows7Aero' "$write_log" || fail "Plasma preseed did not pin the Aero Kvantum theme"
   grep -Fq -- '--file plasmarc --group Theme --key name breeze-light' "$write_log" || fail "Plasma preseed did not pin the light desktop theme"
   grep -Fq -- "--file $AERO7_HOME/.config/kdedefaults/kdeglobals --group General --key ColorScheme Aero7Light" "$write_log" || fail "Plasma preseed did not pin the light kdedefaults color scheme"
   grep -Fq -- "--file $AERO7_HOME/.config/kdedefaults/plasmarc --group Theme --key name breeze-light" "$write_log" || fail "Plasma preseed did not pin the light kdedefaults desktop theme"
+  grep -Fq -- '--file '"$AERO7_HOME"'/.config/aero7-shell/first-loginrc --group Actions --key Theme --type bool true' "$write_log" || fail "headless Plasma install did not schedule first-login theme application"
 )
 
 (
@@ -218,6 +219,88 @@ grep -Fq 'ForegroundNormal=0,0,0' <<<"$scheme_text" || fail "Aero7 light color s
   aero7_apply_plasma_theme >/dev/null
   [[ "$(sed -n '1p' "$order_log")" == "lookandfeel authui7" ]] || fail "Plasma global theme was not applied before component preseed"
   grep -Fq -- 'write kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle kvantum' "$order_log" || fail "Plasma component preseed did not run after global theme apply"
+)
+
+(
+  stage_log="$tmp/plasma-keep-stage.log"
+  aero7_prompt_layout_choice() { printf 'keep\n'; }
+  aero7_state_record_option() { :; }
+  aero7_apply_plasma_theme() { printf 'theme\n' >>"$stage_log"; }
+  aero7_apply_plasma_layout() { printf 'layout\n' >>"$stage_log"; }
+  aero7_apply_wallpaper() { printf 'wallpaper\n' >>"$stage_log"; }
+  # shellcheck source=../stages/80-plasma-layout.sh
+  source "$repo/stages/80-plasma-layout.sh"
+  stage_run
+  grep -Fxq 'theme' "$stage_log" || fail "keep-layout path did not apply the Plasma theme"
+  grep -Fxq 'wallpaper' "$stage_log" || fail "keep-layout path skipped the configured wallpaper"
+  ! grep -Fxq 'layout' "$stage_log" || fail "keep-layout path replaced the Plasma panel layout"
+)
+
+(
+  first_login_home="$tmp/first-login-home"
+  fake_bin="$tmp/first-login-bin"
+  first_login_calls="$tmp/first-login-calls.log"
+  mkdir -p "$first_login_home/.config/aero7-shell" \
+    "$first_login_home/.config/systemd/user/plasma-workspace.target.wants" \
+    "$first_login_home/.cache/aero7-shell" "$fake_bin"
+  cat >"$first_login_home/.config/aero7-shell/first-loginrc" <<'EOF'
+[Actions]
+Theme=true
+Layout=true
+Wallpaper=true
+
+[Theme]
+LookAndFeel=authui7
+ColorScheme=Aero7Light
+DesktopTheme=breeze-light
+KvantumTheme=Windows7Aero
+CursorTheme=aero-drop
+EOF
+  printf 'layout-test-script\n' >"$first_login_home/.cache/aero7-shell/aero7-layout.js"
+  printf 'wallpaper-test-script\n' >"$first_login_home/.cache/aero7-shell/aero7-wallpaper.js"
+  ln -s ../aero7-first-login.service \
+    "$first_login_home/.config/systemd/user/plasma-workspace.target.wants/aero7-first-login.service"
+
+  cat >"$fake_bin/kreadconfig6" <<'EOF'
+#!/usr/bin/env bash
+file=""
+group=""
+key=""
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --file) file="$2"; shift 2 ;;
+    --group) group="$2"; shift 2 ;;
+    --key) key="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+awk -F= -v group="$group" -v key="$key" '
+  $0 == "[" group "]" { active = 1; next }
+  /^\[/ { active = 0 }
+  active && $1 == key { print substr($0, index($0, "=") + 1); exit }
+' "$file"
+EOF
+  cat >"$fake_bin/record-command" <<'EOF'
+#!/usr/bin/env bash
+printf '%s %s\n' "$(basename -- "$0")" "$*" >>"$FIRST_LOGIN_TEST_LOG"
+EOF
+  chmod +x "$fake_bin/kreadconfig6" "$fake_bin/record-command"
+  for command in qdbus6 plasma-apply-lookandfeel kwriteconfig6 plasma-apply-colorscheme plasma-apply-desktoptheme kvantummanager plasma-apply-cursortheme; do
+    ln -s record-command "$fake_bin/$command"
+  done
+
+  HOME="$first_login_home" \
+    FIRST_LOGIN_TEST_LOG="$first_login_calls" \
+    PATH="$fake_bin:/usr/bin:/bin" \
+    bash "$repo/modules/plasma/first-login.sh"
+
+  [[ -e "$first_login_home/.local/state/aero7-shell/first-login-applied" ]] || fail "deferred Plasma helper did not mark completion"
+  [[ ! -L "$first_login_home/.config/systemd/user/plasma-workspace.target.wants/aero7-first-login.service" ]] || fail "deferred Plasma helper did not disable itself"
+  grep -Fq 'plasma-apply-lookandfeel -a authui7' "$first_login_calls" || fail "deferred Plasma helper did not apply the global theme"
+  grep -Fq 'plasma-apply-colorscheme Aero7Light' "$first_login_calls" || fail "deferred Plasma helper did not apply the light color scheme"
+  grep -Fq 'kvantummanager --set Windows7Aero' "$first_login_calls" || fail "deferred Plasma helper did not apply the Aero widget theme"
+  grep -Fq 'layout-test-script' "$first_login_calls" || fail "deferred Plasma helper did not apply the layout"
+  grep -Fq 'wallpaper-test-script' "$first_login_calls" || fail "deferred Plasma helper did not apply the wallpaper"
 )
 
 mkdir -p "$root/usr/share/sddm/themes"

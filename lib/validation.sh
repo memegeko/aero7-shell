@@ -238,6 +238,11 @@ aero7_doctor() {
   else
     aero7_check_status "Plymouth theme configured" "WARNING"
   fi
+  if aero7_plymouth_visibility_configured || aero7_dry_run; then
+    aero7_check_status "Plymouth five-second visible hold" "OK"
+  else
+    aero7_check_status "Plymouth five-second visible hold" "WARNING"
+  fi
   if aero7_initramfs_config_has_plymouth || aero7_dry_run; then
     aero7_check_status "Plymouth initramfs config" "OK"
   else

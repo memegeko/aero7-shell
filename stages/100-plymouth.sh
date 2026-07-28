@@ -20,7 +20,8 @@ stage_run() {
   aero7_pacman_install_needed plymouth
 
   if aero7_dry_run; then
-    aero7_info "Would enable Plymouth with an installed distribution theme and configure initramfs and bootloader."
+    aero7_info "Would enable Plymouth, hold its boot splash for five seconds, and configure initramfs and bootloader."
+    aero7_configure_plymouth_visibility
     aero7_configure_initramfs_for_plymouth
     aero7_configure_bootloader_for_plymouth
     return 0
@@ -40,6 +41,7 @@ stage_run() {
     aero7_die "plymouth-set-default-theme is unavailable."
   fi
 
+  aero7_configure_plymouth_visibility
   aero7_configure_initramfs_for_plymouth
   aero7_configure_bootloader_for_plymouth
 }
@@ -48,6 +50,7 @@ stage_validate() {
   [[ "${AERO7_DRY_RUN:-0}" == "1" ]] && return 0
   aero7_have plymouth-set-default-theme || return 1
   plymouth-set-default-theme >/dev/null 2>&1 || return 1
+  aero7_plymouth_visibility_configured || return 1
   aero7_initramfs_config_has_plymouth || return 1
   aero7_bootloader_config_has_kernel_params quiet splash || return 1
   if aero7_have lsinitcpio; then

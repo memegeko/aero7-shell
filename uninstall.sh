@@ -58,6 +58,10 @@ fi
 if [[ -e /etc/sddm.conf.d/aero7-shell.conf ]]; then
   aero7_safe_remove_file /etc/sddm.conf.d/aero7-shell.conf /etc/sddm.conf.d
 fi
+if [[ -e /etc/systemd/system/plymouth-quit.service.d/aero7-hold.conf ]]; then
+  aero7_safe_remove_file /etc/systemd/system/plymouth-quit.service.d/aero7-hold.conf /etc/systemd/system/plymouth-quit.service.d
+  aero7_sudo_run systemctl daemon-reload
+fi
 
 if [[ "$AERO7_RESTORE_BACKUP" -eq 1 ]]; then
   latest="$(aero7_latest_backup || true)"

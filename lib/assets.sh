@@ -199,7 +199,12 @@ EOF
   if qdbus_cmd="$(aero7_qdbus_command)"; then
     aero7_user_run "$qdbus_cmd" org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$script")" || {
       aero7_warn "Wallpaper script could not be applied during this session."
+      aero7_schedule_first_login_action Wallpaper true || true
       aero7_state_set "logout_recommended" "yes"
     }
+  else
+    aero7_warn "qdbus6/qdbus is unavailable; staging wallpaper application for the first Plasma login."
+    aero7_schedule_first_login_action Wallpaper true || true
+    aero7_state_set "logout_recommended" "yes"
   fi
 }

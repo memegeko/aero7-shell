@@ -132,6 +132,119 @@ aero7_initramfs_image_contains_plymouth() {
   return "$found"
 }
 
+aero7_plymouth_config_path() {
+  printf '%s\n' "${AERO7_PLYMOUTH_CONF:-$(aero7_root_path /etc/plymouth/plymouthd.conf)}"
+}
+
+aero7_plymouth_hold_dropin_path() {
+  printf '%s\n' "${AERO7_PLYMOUTH_HOLD_DROPIN:-$(aero7_root_path /etc/systemd/system/plymouth-quit.service.d/aero7-hold.conf)}"
+}
+
+aero7_update_plymouth_config_file() {
+  local input="$1"
+  local output="$2"
+
+  awk '
+    BEGIN {
+      in_daemon = 0
+      saw_daemon = 0
+      wrote_delay = 0
+    }
+    /^\[[^]]+\][[:space:]]*$/ {
+      if (in_daemon && !wrote_delay) {
+        print "ShowDelay=0"
+        wrote_delay = 1
+      }
+      in_daemon = ($0 == "[Daemon]")
+      if (in_daemon) {
+        saw_daemon = 1
+        wrote_delay = 0
+      }
+      print
+      next
+    }
+    in_daemon && /^[[:space:]]*ShowDelay[[:space:]]*=/ {
+      if (!wrote_delay) {
+        print "ShowDelay=0"
+        wrote_delay = 1
+      }
+      next
+    }
+    { print }
+    END {
+      if (in_daemon && !wrote_delay) {
+        print "ShowDelay=0"
+      } else if (!saw_daemon) {
+        print ""
+        print "[Daemon]"
+        print "ShowDelay=0"
+      }
+    }
+  ' "$input" >"$output"
+}
+
+aero7_validate_plymouth_config() {
+  local file="$1"
+  [[ -s "$file" ]] || return 1
+  awk '
+    /^\[Daemon\][[:space:]]*$/ { in_daemon = 1; next }
+    /^\[[^]]+\][[:space:]]*$/ { in_daemon = 0 }
+    in_daemon && /^[[:space:]]*ShowDelay[[:space:]]*=[[:space:]]*0[[:space:]]*$/ { found = 1 }
+    END { exit(found ? 0 : 1) }
+  ' "$file"
+}
+
+aero7_validate_plymouth_hold_dropin() {
+  local file="$1"
+  local seconds="${AERO7_PLYMOUTH_HOLD_SECONDS:-5}"
+  [[ -s "$file" ]] || return 1
+  grep -Fxq "ExecStartPre=/usr/bin/sleep $seconds" "$file"
+}
+
+aero7_plymouth_visibility_configured() {
+  local config dropin
+  config="$(aero7_plymouth_config_path)"
+  dropin="$(aero7_plymouth_hold_dropin_path)"
+  aero7_validate_plymouth_config "$config" && aero7_validate_plymouth_hold_dropin "$dropin"
+}
+
+aero7_configure_plymouth_visibility() {
+  local seconds="${AERO7_PLYMOUTH_HOLD_SECONDS:-5}"
+  local config dropin config_tmp dropin_tmp backup
+  [[ "$seconds" =~ ^[0-9]+$ ]] || aero7_die "Invalid Plymouth hold duration: $seconds"
+
+  config="${AERO7_PLYMOUTH_CONF:-/etc/plymouth/plymouthd.conf}"
+  dropin="${AERO7_PLYMOUTH_HOLD_DROPIN:-/etc/systemd/system/plymouth-quit.service.d/aero7-hold.conf}"
+
+  if aero7_dry_run; then
+    aero7_info "Would show Plymouth immediately and keep the splash visible for at least $seconds seconds."
+    return 0
+  fi
+
+  [[ -f "$config" ]] || aero7_die "Plymouth configuration not found: $config"
+  config_tmp="$(mktemp)" || return 1
+  dropin_tmp="$(mktemp)" || {
+    rm -f -- "$config_tmp"
+    return 1
+  }
+  trap 'rm -f -- "$config_tmp" "$dropin_tmp"' RETURN
+
+  aero7_update_plymouth_config_file "$config" "$config_tmp"
+  aero7_replace_file_safely "$config" "$config_tmp" "plymouth" "aero7_validate_plymouth_config"
+  backup="${AERO7_LAST_FILE_BACKUP:-}"
+  printf '[Service]\nExecStartPre=/usr/bin/sleep %s\n' "$seconds" >"$dropin_tmp"
+  aero7_validate_plymouth_hold_dropin "$dropin_tmp" || aero7_die "Generated Plymouth hold unit failed validation."
+  aero7_sudo_run install -D -m 0644 "$dropin_tmp" "$dropin" || {
+    [[ -n "$backup" ]] && aero7_restore_file_backup "$backup" "$config"
+    return 1
+  }
+  aero7_state_append "modified_files" "$dropin"
+  aero7_sudo_run systemctl daemon-reload
+
+  rm -f -- "$config_tmp" "$dropin_tmp"
+  trap - RETURN
+}
+
 aero7_run_mkinitcpio_rebuild() {
   aero7_sudo_run mkinitcpio -P
 }

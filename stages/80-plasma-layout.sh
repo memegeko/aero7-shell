@@ -17,6 +17,7 @@ stage_run() {
     keep)
       aero7_state_record_option "layout" "kept"
       aero7_apply_plasma_theme
+      aero7_apply_wallpaper
       ;;
     cancel)
       aero7_die "Installation cancelled before Plasma layout replacement."

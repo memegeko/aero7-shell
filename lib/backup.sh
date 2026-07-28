@@ -20,6 +20,7 @@ $AERO7_HOME/.config/kdeglobals
 $AERO7_HOME/.config/kwinrc
 $AERO7_HOME/.config/plasmarc
 $AERO7_HOME/.config/plasma-org.kde.plasma.desktop-appletsrc
+$AERO7_HOME/.config/plasma-io.gitgud.wackyideas.desktop-appletsrc
 $AERO7_HOME/.config/ksmserverrc
 $AERO7_HOME/.config/dolphinrc
 $AERO7_HOME/.config/kglobalshortcutsrc
@@ -123,4 +124,3 @@ aero7_restore_backup() {
     aero7_sudo_run cp -a -- "$backup" "$source"
   done <"$manifest"
 }
-
