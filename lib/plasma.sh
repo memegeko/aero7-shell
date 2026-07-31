@@ -136,6 +136,7 @@ ExecStart=%h/.local/lib/aero7-shell/first-login
 [Install]
 WantedBy=plasma-workspace.target
 EOF
+  chmod 0644 "$unit_tmp"
   aero7_user_run install -m 0644 "$unit_tmp" "$unit"
   rm -f -- "$unit_tmp"
   aero7_user_run ln -sfn ../aero7-first-login.service "$wants/aero7-first-login.service"

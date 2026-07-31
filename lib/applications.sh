@@ -10,7 +10,7 @@ aero7_recipe_clear() {
   unset AERO7_APP_REF AERO7_APP_LICENSE AERO7_APP_DEPENDENCIES
   unset AERO7_APP_OPTIONAL_DEPENDENCIES AERO7_APP_SUPPORTED_SESSION
   unset AERO7_APP_BUILD_SYSTEM AERO7_APP_SOURCE_SUBDIR AERO7_APP_INSTALL_KIND
-  unset AERO7_APP_AUR_PACKAGE AERO7_APP_VALIDATE_COMMAND AERO7_APP_FATAL
+  unset AERO7_APP_AUR_PACKAGE AERO7_APP_BINARY_PACKAGE AERO7_APP_VALIDATE_COMMAND AERO7_APP_FATAL
   unset AERO7_APP_EXPERIMENTAL AERO7_APP_AVAILABLE AERO7_APP_REASON
   unset AERO7_APP_BRANCH AERO7_APP_BUILD_COMMAND AERO7_APP_INSTALL_COMMAND
   unset AERO7_APP_UNINSTALL_METADATA AERO7_APP_PLASMA6_COMPAT AERO7_APP_WAYLAND_COMPAT
@@ -65,11 +65,15 @@ aero7_app_validate_current_recipe() {
 }
 
 aero7_app_signed_package_available_current_recipe() {
-  [[ "${AERO7_APP_INSTALL_KIND:-}" == "aur" ]] || return 1
-  [[ -n "${AERO7_APP_AUR_PACKAGE:-}" ]] || return 1
+  local package="${AERO7_APP_BINARY_PACKAGE:-${AERO7_APP_AUR_PACKAGE:-}}"
+  case "${AERO7_APP_INSTALL_KIND:-}" in
+    aur|binary) ;;
+    *) return 1 ;;
+  esac
+  [[ -n "$package" ]] || return 1
   [[ "$(aero7_state_get binary_repo_ready 2>/dev/null || printf no)" == "yes" ]] || return 1
   aero7_binary_repo_load_config
-  aero7_binary_repo_package_available "$AERO7_APP_AUR_PACKAGE"
+  aero7_binary_repo_package_available "$package"
 }
 
 aero7_app_install_current_recipe() {
@@ -98,6 +102,18 @@ aero7_app_install_current_recipe() {
           aero7_binary_repo_install_named_packages "$AERO7_APP_AUR_PACKAGE" || return 1
       else
         aero7_yay_install_packages "$AERO7_APP_AUR_PACKAGE" || return 1
+      fi
+      ;;
+    binary)
+      [[ -n "${AERO7_APP_BINARY_PACKAGE:-}" ]] || aero7_die "$AERO7_APP_NAME recipe lacks a binary package."
+      if aero7_have pacman && aero7_pacman_installed "$AERO7_APP_BINARY_PACKAGE"; then
+        aero7_detail "$AERO7_APP_NAME is already installed."
+      elif aero7_app_signed_package_available_current_recipe; then
+        AERO7_BINARY_REPO_INSTALL_TITLE="Installing $AERO7_APP_NAME from signed Aero7 repository" \
+          aero7_binary_repo_install_named_packages "$AERO7_APP_BINARY_PACKAGE" || return 1
+      else
+        aero7_warn "$AERO7_APP_NAME requires the signed Aero7 repository package $AERO7_APP_BINARY_PACKAGE."
+        return 1
       fi
       ;;
     git-cmake)
@@ -159,13 +175,6 @@ aero7_apps_install_defaults() {
   for recipe in $(aero7_recipe_list); do
     aero7_recipe_load "$recipe"
     case "$AERO7_APP_ID" in
-      winxplorer)
-        aero7_prompt_optional_app AERO7_INSTALL_WINXPLORER "WinXplorer" || {
-          aero7_info "User skipped WinXplorer."
-          aero7_state_append "skipped_applications" "winxplorer: user declined or noninteractive default"
-          continue
-        }
-        ;;
       sevulet)
         aero7_prompt_optional_app AERO7_INSTALL_SEVULET "Sevulet" || {
           aero7_info "User skipped Sevulet."

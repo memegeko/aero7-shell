@@ -38,8 +38,9 @@ Useful installer options:
 ./install.sh --allow-source-fallback
 ```
 
-Noninteractive mode keeps any existing Plasma layout, skips WinXplorer, skips
-Sevulet, and does not reboot unless explicit options are added. The installer
+Noninteractive mode keeps any existing Plasma layout, installs WinXplorer from
+the signed Aero7 companion set, skips Sevulet, and does not reboot unless
+explicit options are added. The installer
 still pre-applies the upstream AeroThemePlasma Wayland session and marks its
 first-time setup wizard as complete after configuring the equivalent settings.
 

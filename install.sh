@@ -23,13 +23,15 @@ AERO7_INTERACTIVE_REQUESTED=0
 AERO7_RESUME=0
 AERO7_NO_REBOOT=0
 AERO7_REPLACE_LAYOUT="ask"
-AERO7_INSTALL_WINXPLORER="ask"
+AERO7_INSTALL_WINXPLORER="yes"
 AERO7_INSTALL_SEVULET="ask"
 AERO7_RESTART_STAGE=""
 AERO7_SKIP_STAGES=()
 AERO7_REBOOT="ask"
 AERO7_PACKAGE_MODE="${AERO7_PACKAGE_MODE:-auto}"
 AERO7_ALLOW_SOURCE_FALLBACK="${AERO7_ALLOW_SOURCE_FALLBACK:-0}"
+AERO7_IMAGE_MODE=0
+AERO7_TARGET_USER=""
 
 usage() {
   cat <<EOF
@@ -59,9 +61,11 @@ Options:
   --source-build         Build Aero packages from AUR source recipes
   --allow-source-fallback
                           Allow AUR source build fallback if binary packages fail
+  --image-mode           Run the post-install stages as root during Aero7 OOBE
+  --target-user USER     Account that receives the per-user desktop configuration
   --replace-layout       Apply the full Aero7-shell Plasma layout
   --keep-layout          Keep current Plasma layout
-  --install-winxplorer   Include optional WinXplorer recipe if available
+  --install-winxplorer   Compatibility option; WinXplorer is now included
   --install-sevulet      Include optional Sevulet recipe if available
 EOF
 }
@@ -103,6 +107,12 @@ while [[ "$#" -gt 0 ]]; do
     --binary-packages) AERO7_PACKAGE_MODE=binary ;;
     --source-build) AERO7_PACKAGE_MODE=source ;;
     --allow-source-fallback) AERO7_ALLOW_SOURCE_FALLBACK=1 ;;
+    --image-mode) AERO7_IMAGE_MODE=1 ;;
+    --target-user)
+      shift
+      [[ "$#" -gt 0 ]] || aero7_die "--target-user requires a value."
+      AERO7_TARGET_USER="$1"
+      ;;
     --replace-layout) AERO7_REPLACE_LAYOUT=yes ;;
     --keep-layout) AERO7_REPLACE_LAYOUT=no ;;
     --install-winxplorer) AERO7_INSTALL_WINXPLORER=yes ;;
@@ -119,6 +129,7 @@ export AERO7_NO_COLOR AERO7_PLAIN AERO7_QUIET AERO7_TUI
 export AERO7_RESUME AERO7_NO_REBOOT AERO7_REPLACE_LAYOUT
 export AERO7_INSTALL_WINXPLORER AERO7_INSTALL_SEVULET AERO7_REBOOT
 export AERO7_PACKAGE_MODE AERO7_ALLOW_SOURCE_FALLBACK AERO7_BACKEND_RUN
+export AERO7_IMAGE_MODE AERO7_TARGET_USER
 
 if [[ "$AERO7_DEBUG" == "1" ]]; then
   export PS4='+ ${BASH_SOURCE##*/}:${LINENO}:${FUNCNAME[0]:-main}:stage=${AERO7_CURRENT_STAGE:-startup}: '
@@ -168,6 +179,38 @@ source "$AERO7_PROJECT_ROOT/lib/ownership.sh"
 
 trap 'aero7_unexpected_error "$LINENO" "$?"' ERR
 
+aero7_prepare_image_mode() {
+  if [[ "$AERO7_IMAGE_MODE" != "1" ]]; then
+    [[ -z "$AERO7_TARGET_USER" ]] || aero7_die "--target-user is valid only with --image-mode."
+    return 0
+  fi
+
+  aero7_is_root || aero7_die "--image-mode must run as root inside the installed Aero7 system."
+  [[ "${AERO7_IMAGE_MODE_GUARD:-}" == "YES-I-AM-IN-AERO7-FIRST-BOOT" ]] ||
+    aero7_die "Aero7 first-boot image-mode guard is absent."
+  [[ -r /var/lib/aero7/install-source ]] ||
+    aero7_die "Aero7 installation provenance marker is missing."
+  grep -Fqx 'full-shell-stage-adapter=ready' /var/lib/aero7/install-source ||
+    aero7_die "Aero7 installation provenance marker is not ready."
+  [[ "$AERO7_TARGET_USER" =~ ^[a-z_][a-z0-9_-]{1,30}$ ]] ||
+    aero7_die "--target-user is not a valid local account name."
+
+  local passwd_entry target_uid target_home
+  passwd_entry="$(getent passwd "$AERO7_TARGET_USER" || true)"
+  [[ -n "$passwd_entry" ]] || aero7_die "Target user does not exist: $AERO7_TARGET_USER"
+  target_uid="$(awk -F: '{print $3}' <<<"$passwd_entry")"
+  target_home="$(awk -F: '{print $6}' <<<"$passwd_entry")"
+  [[ "$target_uid" =~ ^[0-9]+$ && "$target_uid" -ge 1000 ]] ||
+    aero7_die "Target user must be an unprivileged human account."
+  [[ -n "$target_home" && -d "$target_home" && "$target_home" != / ]] ||
+    aero7_die "Target user home directory is not ready."
+
+  AERO7_USER="$AERO7_TARGET_USER"
+  AERO7_HOME="$target_home"
+  export AERO7_USER AERO7_HOME
+}
+
+aero7_prepare_image_mode
 aero7_init_paths
 
 if [[ "$AERO7_BACKEND_RUN" == "1" && "${AERO7_TUI_BACKEND:-0}" == "1" && -z "${AERO7_EVENT_FD:-}" ]]; then
@@ -232,7 +275,9 @@ if [[ "$AERO7_BACKEND_RUN" != "1" ]]; then
 fi
 
 aero7_logging_init install
-aero7_refuse_root_install
+if [[ "$AERO7_IMAGE_MODE" != "1" ]]; then
+  aero7_refuse_root_install
+fi
 AERO7_RECORD_WARNINGS=1
 export AERO7_RECORD_WARNINGS
 

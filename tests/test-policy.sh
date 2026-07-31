@@ -18,6 +18,7 @@ source "$repo/lib/applications.sh"
 source "$repo/lib/bootloader.sh"
 source "$repo/lib/initramfs.sh"
 source "$repo/lib/plasma.sh"
+source "$repo/lib/assets.sh"
 source "$repo/lib/ownership.sh"
 source "$repo/lib/validation.sh"
 
@@ -37,7 +38,9 @@ grep -q 'sudo credential keepalive stopped' "$repo/lib/common.sh" || fail "sudo 
 
 while IFS= read -r denied; do
   [[ -n "$denied" ]] || continue
-  if awk 'NF && $1 !~ /^#/ { print $1 }' "$repo/config/packages.conf" "$repo/config/aur-packages.conf" | grep -Fxq "$denied"; then
+  if awk 'NF && $1 !~ /^#/ { print $1 }' \
+    "$repo/config/packages.conf" "$repo/config/aur-packages.conf" \
+    "$repo/config/companion-packages.conf" | grep -Fxq "$denied"; then
     fail "denylisted X11 package appears in install lists: $denied"
   fi
 done < <(aero7_x11_denylist)
@@ -79,11 +82,14 @@ fi
   fail "PlymouthVista repository is not the requested upstream"
 [[ "$AERO7_PLYMOUTH_VISTA_REF" =~ ^[0-9a-f]{40}$ ]] || fail "PlymouthVista revision is not pinned"
 
-for disabled in aero-dolphin aero-gwenview control-panel; do
-  recipe="$repo/recipes/$disabled.sh"
+for enabled in aero-dolphin aero-gwenview aero-kolourpaint control-panel gadgets winxplorer execbin linver; do
+  recipe="$repo/recipes/$enabled.sh"
   aero7_recipe_load "$recipe"
-  [[ "$AERO7_APP_AVAILABLE" == "no" ]] || fail "$disabled should remain disabled until VM replacement/build validation is explicit"
+  [[ "$AERO7_APP_AVAILABLE" == "yes" ]] || fail "$enabled should be available from the signed companion package set"
+  [[ "$AERO7_APP_INSTALL_KIND" == "binary" ]] || fail "$enabled should not fall back to an unpinned source install"
 done
+aero7_recipe_load "$repo/recipes/sevulet.sh"
+[[ "$AERO7_APP_AVAILABLE" == "no" ]] || fail "Sevulet must remain disabled until its source and license are auditable"
 
 (
   export AERO7_PACKAGE_MODE=binary
@@ -369,12 +375,53 @@ if [[ "$ownership_checked" -eq 1 ]]; then
   fi
 fi
 
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_ASSET_DIR="$tmp/wallpaper-assets"
+  export AERO7_CACHE_DIR="$tmp/wallpaper-cache"
+  AERO7_USER="$(id -un)"
+  export AERO7_USER
+  aero7_sudo_run() { "$@"; }
+  aero7_user_run() { "$@"; }
+  aero7_wallpaper_package_field() { return 1; }
+  aero7_install_wallpaper_asset "$repo/assets/wallpapers/aero_bg_1.png"
+  [[ -f "$AERO7_ASSET_DIR/wallpapers/aero_bg_1.png" ]] ||
+    fail "wallpaper installer did not create its destination directory"
+)
+
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_ROOT="$tmp/first-login-root"
+  export AERO7_HOME="$tmp/first-login-home"
+  AERO7_USER="$(id -un)"
+  export AERO7_USER
+  mkdir -p "$AERO7_ROOT/modules/plasma" "$AERO7_HOME"
+  printf '#!/usr/bin/env bash\n' >"$AERO7_ROOT/modules/plasma/first-login.sh"
+  chmod 0755 "$AERO7_ROOT/modules/plasma/first-login.sh"
+  aero7_state_append() { :; }
+  aero7_user_run() {
+    local argument permissions
+    if [[ "${1:-}" == "install" ]]; then
+      for argument in "$@"; do
+        [[ -f "$argument" && "$argument" == /tmp/tmp.* ]] || continue
+        permissions="$(stat -c '%a' "$argument")"
+        [[ "${permissions: -1}" =~ [4567] ]] || return 96
+      done
+    fi
+    "$@"
+  }
+  aero7_prepare_first_login_apply || fail "first-login unit was not readable by the target user"
+  [[ -f "$AERO7_HOME/.config/systemd/user/aero7-first-login.service" ]] ||
+    fail "first-login unit was not installed"
+)
+
 run_output="$tmp/noninteractive.out"
 env -u AERO7_STATE_ROOT_OVERRIDE \
   -u AERO7_TEST_ROOT \
   -u AERO7_MKINITCPIO_CONF \
   -u AERO7_DRACUT_DROPIN \
   -u AERO7_HOME \
+  AERO7_LOG_DIR="$tmp/noninteractive-logs" \
   AERO7_USER_STATE_DIR="$tmp/noninteractive-state" \
   "$repo/install.sh" --dry-run --non-interactive --no-reboot >"$run_output"
 ! grep -q 'Reboot now?' "$run_output" || fail "noninteractive dry-run offered reboot"

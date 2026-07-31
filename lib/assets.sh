@@ -56,6 +56,7 @@ aero7_install_wallpaper_asset() {
   base="$(basename -- "$wallpaper")"
   dest_wallpapers="$AERO7_ASSET_DIR/wallpapers"
   raw_dest="$dest_wallpapers/$base"
+  aero7_sudo_run install -d -m 0755 "$dest_wallpapers"
   aero7_sudo_run install -m 0644 "$wallpaper" "$raw_dest"
 
   package_id="$(aero7_wallpaper_package_field "$wallpaper" id)" || return 0

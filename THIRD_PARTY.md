@@ -24,17 +24,17 @@ driver system.
 
 | Application | Source | Current recipe status |
 | --- | --- | --- |
-| Aero Dolphin | https://gitgud.io/atmk/dolphin-aero | Disabled; AUR package conflicts with stock `dolphin` |
-| Aero Gwenview | https://gitgud.io/atmk/gwenview-aero | Disabled; AUR package conflicts with stock `gwenview` |
-| Aero KolourPaint | Not yet verified as an Aero fork | Unavailable until authoritative source is confirmed |
-| Linux Control Panel | https://github.com/actuallyaridan/linux-control | Disabled until current build instructions are verified |
+| Aero Dolphin | https://gitgud.io/atmk/dolphin-aero | Signed `aero7-dolphin`; patched to the clean-room MIT Aero7Qt layer |
+| Aero Gwenview | https://gitgud.io/atmk/gwenview-aero | Signed `aero7-gwenview`; original code-drawn controls and MIT Aero7Qt layer |
+| Aero KolourPaint | https://invent.kde.org/albert-tomanek/kolourpaint/-/tree/saribbon-aero | Signed `aero7-kolourpaint`; MIT SARibbon and MIT Aero7Qt layer |
+| Linux Control Panel | https://github.com/actuallyaridan/linux-control | Signed `linux-control-panel`; patched to the MIT Aero7Qt layer |
 | Linux Device Manager | https://github.com/actuallyaridan/linux-devmgmt | AUR recipe available: `linux-devmgmt` |
 | TuxManager | https://github.com/benapetr/TuxManager | AUR recipe available: `tuxmanager` |
-| Gadgets | Not yet verified | Unavailable until authoritative source is confirmed |
-| WinXplorer | Not yet verified | Optional and unavailable until authoritative source is confirmed |
-| execbin/run dialog | Not yet verified | Unavailable until authoritative source is confirmed |
-| LinVer | Mentioned by AeroThemePlasma; standalone authoritative source not yet verified | Unavailable until source and build system are confirmed |
-| Sevulet | Not yet verified | Optional and unavailable until authoritative source is confirmed |
+| Gadgets | Aero7-owned source in `aero7-repo` | Signed `aero7-gadgets`; original Clock, CPU Meter, and Notes widgets |
+| WinXplorer | https://gitgud.io/catpswin56/winxplorer | Signed `winxplorer`; bundled bitmap controls and navigation sound removed |
+| execbin/run dialog | https://gitgud.io/catpswin56/execbin | Signed `execbin`; bundled icons replaced with documented original artwork |
+| LinVer | https://gitgud.io/wackyideas/linver | Signed `linver`; bundled version branding replaced with documented original artwork |
+| Sevulet | https://gitgud.io/snailatte/sevulet | Project identified, but anonymous source access and a distributable license could not be verified |
 
 ## Plymouth
 
@@ -42,6 +42,10 @@ Aero7-shell installs and configures the Arch `plymouth` package with distributio
 
 ## Bundled Project Assets
 
-The safe avatar `assets/avatars/aero7-user.png` is original Aero7-shell artwork released under the MIT license with the rest of this repository.
+The safe avatar `assets/avatars/aero7-user.png` and all three images in
+`assets/wallpapers/` are original Aero7-shell artwork released under the MIT
+license with the rest of this repository. The installer registers all three as
+KDE wallpaper packages and selects `aero_bg_1.png` by default.
 
-No wallpaper is currently approved for distribution. Aero7-shell does not install Microsoft wallpaper files, Windows-logo wallpapers, or `usertile*.bmp` avatar files.
+Aero7-shell does not install Microsoft wallpaper files, Windows-logo
+wallpapers, or `usertile*.bmp` avatar files.

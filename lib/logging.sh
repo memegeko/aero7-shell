@@ -14,12 +14,14 @@ aero7_logging_init() {
 
   if [[ "$(id -un)" == "$AERO7_USER" ]]; then
     mkdir -p -- "$AERO7_LOG_DIR"
+    AERO7_LOG_FILE="${AERO7_LOG_FILE:-$AERO7_LOG_DIR/$name-$stamp.log}"
+    touch "$AERO7_LOG_FILE"
   else
     sudo -H -u "$AERO7_USER" mkdir -p -- "$AERO7_LOG_DIR"
+    AERO7_LOG_FILE="${AERO7_LOG_FILE:-$AERO7_LOG_DIR/$name-$stamp.log}"
+    sudo -H -u "$AERO7_USER" touch "$AERO7_LOG_FILE"
   fi
 
-  AERO7_LOG_FILE="${AERO7_LOG_FILE:-$AERO7_LOG_DIR/$name-$stamp.log}"
-  touch "$AERO7_LOG_FILE" 2>/dev/null || sudo -H -u "$AERO7_USER" touch "$AERO7_LOG_FILE"
   export AERO7_LOG_DIR AERO7_LOG_FILE
   aero7_log "INFO" "Log file: $AERO7_LOG_FILE"
 }
