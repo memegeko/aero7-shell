@@ -233,6 +233,7 @@ StartupNotify=true
 Terminal=false
 X-DBUS-StartupType=Unique
 X-DBUS-ServiceName=org.kde.konsole
+StartupWMClass=konsole
 EOF
   chmod 0644 "$tmp"
   aero7_user_run install -d -m 0755 "$applications_dir"
@@ -252,6 +253,10 @@ EOF
   aero7_user_run install -m 0644 "$tmp" "$desktop_file"
   rm -f -- "$tmp"
   aero7_state_append "modified_user_files" "$desktop_file"
+
+  if aero7_have kbuildsycoca6; then
+    aero7_user_run kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+  fi
 }
 
 aero7_apps_may_need_aur() {

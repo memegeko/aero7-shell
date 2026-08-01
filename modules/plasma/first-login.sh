@@ -96,6 +96,45 @@ if config_true Theme; then
   if command -v plasma-apply-cursortheme >/dev/null 2>&1; then
     plasma-apply-cursortheme "$cursor_theme" --size 32 || true
   fi
+
+  # Applying the Aero look-and-feel on top of Plasma's initial layout can leave
+  # both taskbars alive. Keep one Aero containment and remove every stock or
+  # duplicate panel. If the theme did not create one, build the canonical Aero
+  # taskbar here so a new account never starts without a usable panel.
+  "$qdbus_command" org.kde.plasmashell /PlasmaShell \
+    org.kde.PlasmaShell.evaluateScript '
+function isAeroPanel(panel) {
+    if (String(panel.type) === "io.gitgud.wackyideas.panel") return true;
+    var panelWidgets = panel.widgets();
+    for (var widgetIndex = 0; widgetIndex < panelWidgets.length; ++widgetIndex) {
+        var widgetType = String(panelWidgets[widgetIndex].type);
+        if (widgetType === "io.gitgud.wackyideas.SevenStart" ||
+            widgetType === "io.gitgud.wackyideas.seventasks") return true;
+    }
+    return false;
+}
+var currentPanels = panels();
+var aeroPanel = null;
+for (var panelIndex = 0; panelIndex < currentPanels.length; ++panelIndex) {
+    var candidate = currentPanels[panelIndex];
+    if (aeroPanel === null && isAeroPanel(candidate)) {
+        aeroPanel = candidate;
+    } else {
+        candidate.remove();
+    }
+}
+if (aeroPanel === null) {
+    aeroPanel = new Panel("io.gitgud.wackyideas.panel");
+    aeroPanel.addWidget("io.gitgud.wackyideas.SevenStart");
+    aeroPanel.addWidget("io.gitgud.wackyideas.seventasks");
+    aeroPanel.addWidget("io.gitgud.wackyideas.systemtray");
+    aeroPanel.addWidget("io.gitgud.wackyideas.digitalclocklite");
+    aeroPanel.addWidget("io.gitgud.wackyideas.win7showdesktop");
+}
+aeroPanel.location = "bottom";
+aeroPanel.height = 40;
+aeroPanel.floating = false;
+' || true
 fi
 
 apply_plasma_script() {
@@ -121,6 +160,9 @@ if [[ "$failed" -ne 0 ]]; then
 fi
 
 "$qdbus_command" org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true
+if command -v kbuildsycoca6 >/dev/null 2>&1; then
+  kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+fi
 touch -- "$marker"
 rm -f -- "$config_home/systemd/user/plasma-workspace.target.wants/aero7-first-login.service"
 printf '[%s] Deferred Plasma setup completed.\n' "$(date '+%Y-%m-%d %H:%M:%S')"

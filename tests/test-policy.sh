@@ -344,6 +344,7 @@ EOF
   grep -Fq 'plasma-apply-lookandfeel -a authui7' "$first_login_calls" || fail "deferred Plasma helper did not apply the global theme"
   grep -Fq 'plasma-apply-colorscheme Aero7Light' "$first_login_calls" || fail "deferred Plasma helper did not apply the light color scheme"
   grep -Fq 'kvantummanager --set Windows7Aero' "$first_login_calls" || fail "deferred Plasma helper did not apply the Aero widget theme"
+  grep -Fq 'io.gitgud.wackyideas.panel' "$first_login_calls" || fail "deferred Plasma helper did not repair duplicate panels"
   grep -Fq 'layout-test-script' "$first_login_calls" || fail "deferred Plasma helper did not apply the layout"
   grep -Fq 'wallpaper-test-script' "$first_login_calls" || fail "deferred Plasma helper did not apply the wallpaper"
 )
@@ -354,6 +355,22 @@ mkdir -p "$root/usr/share/sddm/themes/aero7-test"
 [[ "$(aero7_find_sddm_aero_theme)" == "aero7-test" ]] || fail "Aero SDDM theme was not detected"
 mkdir -p "$root/usr/share/sddm/themes/sddm-theme-mod"
 [[ "$(aero7_find_sddm_aero_theme)" == "sddm-theme-mod" ]] || fail "upstream AeroThemePlasma SDDM theme was not preferred"
+mkdir -p "$root/usr/share/aero7/branding"
+printf 'blue-welcome-background\n' >"$root/usr/share/aero7/branding/aero7-login-background.jpg"
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_STATE_ROOT_OVERRIDE="$tmp/sddm-branding-state"
+  aero7_state_init
+  aero7_brand_sddm_background sddm-theme-mod
+)
+for branded_background in background default-background bgtexture.jpg preview.png; do
+  cmp -s "$root/usr/share/aero7/branding/aero7-login-background.jpg" \
+    "$root/usr/share/sddm/themes/sddm-theme-mod/$branded_background" || \
+    fail "SDDM $branded_background did not receive the Aero7 Welcome background"
+done
+
+grep -Fq 'Name=Command Prompt' "$repo/lib/applications.sh" || fail "Konsole branding is not named Command Prompt"
+grep -Fq 'kbuildsycoca6 --noincremental' "$repo/lib/applications.sh" || fail "application branding does not refresh the KDE service cache"
 
 (
   unset DISPLAY WAYLAND_DISPLAY

@@ -646,8 +646,8 @@ aero7_preseed_atp_user_config() {
   fi
   aero7_preseed_kdedefaults_theme_config "$color_scheme" "$lookandfeel" "$icon_theme" "$desktop_theme"
   aero7_kwriteconfig_user --file kscreenlockerrc --group Daemon --key LockGrace 0 || true
-  aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key Image "file:///usr/share/sddm/themes/sddm-theme-mod/bgtexture.jpg" || true
-  aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key PreviewImage "file:///usr/share/sddm/themes/sddm-theme-mod/bgtexture.jpg" || true
+  aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key Image "file:///usr/share/aero7/branding/aero7-login-background.jpg" || true
+  aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key PreviewImage "file:///usr/share/aero7/branding/aero7-login-background.jpg" || true
   aero7_kwriteconfig_user --file ksmserverrc --group General --key confirmLogout --type bool false || true
   aero7_kwriteconfig_user --file klaunchrc --group FeedbackStyle --key BusyCursor --type bool false || true
   aero7_kwriteconfig_user --file klaunchrc --group BusyCursorSettings --key Bouncing --type bool false || true
@@ -814,6 +814,28 @@ aero7_find_sddm_aero_theme() {
   find "$theme_dir" -maxdepth 1 -mindepth 1 -type d -iname '*aero*' -printf '%f\n' | sort | head -n 1
 }
 
+aero7_brand_sddm_background() {
+  local theme="$1"
+  local source theme_dir destination
+  source="$(aero7_plasma_root_path /usr/share/aero7/branding/aero7-login-background.jpg)"
+  theme_dir="$(aero7_plasma_root_path "/usr/share/sddm/themes/$theme")"
+
+  [[ -n "$theme" && -f "$source" && -d "$theme_dir" ]] || return 0
+  if aero7_dry_run; then
+    aero7_info "Would apply the Aero7 Welcome background to the $theme SDDM theme."
+    return 0
+  fi
+
+  for destination in background default-background bgtexture.jpg preview.png; do
+    if [[ -n "${AERO7_TEST_ROOT:-}" ]]; then
+      install -m 0644 "$source" "$theme_dir/$destination"
+    else
+      aero7_sudo_run install -m 0644 "$source" "$theme_dir/$destination"
+    fi
+    aero7_state_append "modified_files" "/usr/share/sddm/themes/$theme/$destination"
+  done
+}
+
 aero7_configure_default_cursor_theme() {
   if aero7_dry_run; then
     aero7_info "Would set the default cursor theme to aero-drop."
@@ -893,6 +915,7 @@ aero7_configure_sddm() {
   rm -f -- "$tmp"
   trap - RETURN
   aero7_configure_default_cursor_theme
+  aero7_brand_sddm_background "$theme"
   aero7_select_sddm_wayland_session
   aero7_mark_atp_ootb_complete
   aero7_systemctl_enable sddm.service
