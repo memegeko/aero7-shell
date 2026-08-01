@@ -371,6 +371,11 @@ done
 
 grep -Fq 'Name=Command Prompt' "$repo/lib/applications.sh" || fail "Konsole branding is not named Command Prompt"
 grep -Fq 'kbuildsycoca6 --noincremental' "$repo/lib/applications.sh" || fail "application branding does not refresh the KDE service cache"
+grep -Fq 'new Panel("io.gitgud.wackyideas.panel")' "$repo/lib/plasma.sh" || fail "staged layout does not create the Aero taskbar"
+grep -Fq 'candidate.remove();' "$repo/lib/plasma.sh" || fail "staged layout does not remove duplicate panels"
+if sed -n '/aero7_apply_plasma_layout()/,/^}/p' "$repo/lib/plasma.sh" | grep -Fq 'org.kde.plasma.icontasks'; then
+  fail "staged layout still creates a stock KDE taskbar"
+fi
 
 (
   unset DISPLAY WAYLAND_DISPLAY

@@ -767,20 +767,37 @@ aero7_apply_plasma_layout() {
   local script="$AERO7_CACHE_DIR/aero7-layout.js"
   aero7_user_run install -d -m 0755 "$AERO7_CACHE_DIR"
   cat >"$script" <<'EOF'
-var panels = panels();
-for (var i = 0; i < panels.length; i++) {
-  if (panels[i].location == "bottom") {
-    panels[i].height = 44;
+function isAeroPanel(panel) {
+  if (String(panel.type) === "io.gitgud.wackyideas.panel") return true;
+  var panelWidgets = panel.widgets();
+  for (var widgetIndex = 0; widgetIndex < panelWidgets.length; ++widgetIndex) {
+    var widgetType = String(panelWidgets[widgetIndex].type);
+    if (widgetType === "io.gitgud.wackyideas.SevenStart" ||
+        widgetType === "io.gitgud.wackyideas.seventasks") return true;
+  }
+  return false;
+}
+var currentPanels = panels();
+var aeroPanel = null;
+for (var panelIndex = 0; panelIndex < currentPanels.length; ++panelIndex) {
+  var candidate = currentPanels[panelIndex];
+  if (aeroPanel === null && isAeroPanel(candidate)) {
+    aeroPanel = candidate;
+  } else {
+    candidate.remove();
   }
 }
-var panel = new Panel;
-panel.location = "bottom";
-panel.height = 44;
-panel.addWidget("org.kde.plasma.kickoff");
-panel.addWidget("org.kde.plasma.icontasks");
-panel.addWidget("org.kde.plasma.marginsseparator");
-panel.addWidget("org.kde.plasma.systemtray");
-panel.addWidget("org.kde.plasma.digitalclock");
+if (aeroPanel === null) {
+  aeroPanel = new Panel("io.gitgud.wackyideas.panel");
+  aeroPanel.addWidget("io.gitgud.wackyideas.SevenStart");
+  aeroPanel.addWidget("io.gitgud.wackyideas.seventasks");
+  aeroPanel.addWidget("io.gitgud.wackyideas.systemtray");
+  aeroPanel.addWidget("io.gitgud.wackyideas.digitalclocklite");
+  aeroPanel.addWidget("io.gitgud.wackyideas.win7showdesktop");
+}
+aeroPanel.location = "bottom";
+aeroPanel.height = 40;
+aeroPanel.floating = false;
 EOF
   chown "$AERO7_USER:$AERO7_USER" "$script" 2>/dev/null || true
   aero7_state_append "modified_user_files" "$script"
