@@ -27,6 +27,10 @@ aero7_qdbus_command() {
 }
 
 aero7_graphical_session_available() {
+  # Image mode runs inside the installer's Cage/Wayland session.  That is not
+  # the target user's Plasma session, so Qt/KDE apply helpers must be deferred
+  # until the first real Plasma login.
+  [[ "${AERO7_IMAGE_MODE:-0}" != "1" ]] || return 1
   [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]
 }
 

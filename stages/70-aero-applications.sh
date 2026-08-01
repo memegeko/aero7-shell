@@ -6,6 +6,7 @@ stage_check() {
 
 stage_run() {
   aero7_apps_install_defaults
+  aero7_install_application_branding
 }
 
 stage_validate() {
@@ -15,4 +16,3 @@ stage_validate() {
 stage_rollback() {
   return 0
 }
-

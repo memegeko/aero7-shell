@@ -11,7 +11,9 @@ stage_run() {
     apply)
       aero7_state_record_option "layout" "applied"
       aero7_apply_plasma_theme
-      aero7_apply_plasma_layout
+      # AeroThemePlasma's look-and-feel creates the single Aero panel.  Adding
+      # a second generic Plasma panel here produced the duplicate taskbar seen
+      # on fresh installations.
       aero7_apply_wallpaper
       ;;
     keep)

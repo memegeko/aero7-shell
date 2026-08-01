@@ -27,7 +27,7 @@ Installer behavior to test:
 - No internet
 - Failed optional app
 - Decline and accept layout replacement
-- Verify WinXplorer is installed without an optional-app prompt
+- Verify WinXplorer is absent unless `--install-winxplorer` was requested
 - Decline and accept Sevulet
 - Decline reboot
 - Restore backup

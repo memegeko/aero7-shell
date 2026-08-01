@@ -23,7 +23,7 @@ AERO7_INTERACTIVE_REQUESTED=0
 AERO7_RESUME=0
 AERO7_NO_REBOOT=0
 AERO7_REPLACE_LAYOUT="ask"
-AERO7_INSTALL_WINXPLORER="yes"
+AERO7_INSTALL_WINXPLORER="no"
 AERO7_INSTALL_SEVULET="ask"
 AERO7_RESTART_STAGE=""
 AERO7_SKIP_STAGES=()
@@ -65,7 +65,7 @@ Options:
   --target-user USER     Account that receives the per-user desktop configuration
   --replace-layout       Apply the full Aero7-shell Plasma layout
   --keep-layout          Keep current Plasma layout
-  --install-winxplorer   Compatibility option; WinXplorer is now included
+  --install-winxplorer   Include the optional WinXplorer compatibility browser
   --install-sevulet      Include optional Sevulet recipe if available
 EOF
 }

@@ -257,6 +257,28 @@ grep -Fq 'ForegroundNormal=0,0,0' <<<"$scheme_text" || fail "Aero7 light color s
 )
 
 (
+  stage_log="$tmp/plasma-apply-stage.log"
+  aero7_prompt_layout_choice() { printf 'apply\n'; }
+  aero7_state_record_option() { :; }
+  aero7_apply_plasma_theme() { printf 'theme\n' >>"$stage_log"; }
+  aero7_apply_plasma_layout() { printf 'layout\n' >>"$stage_log"; }
+  aero7_apply_wallpaper() { printf 'wallpaper\n' >>"$stage_log"; }
+  # shellcheck source=../stages/80-plasma-layout.sh
+  source "$repo/stages/80-plasma-layout.sh"
+  stage_run
+  grep -Fxq 'theme' "$stage_log" || fail "replace-layout path did not apply the Aero theme"
+  grep -Fxq 'wallpaper' "$stage_log" || fail "replace-layout path skipped the configured wallpaper"
+  ! grep -Fxq 'layout' "$stage_log" || fail "replace-layout path created a duplicate generic Plasma panel"
+)
+
+(
+  export AERO7_IMAGE_MODE=1
+  export DISPLAY=:99
+  export WAYLAND_DISPLAY=wayland-99
+  ! aero7_graphical_session_available || fail "image mode mistook the installer compositor for the target Plasma session"
+)
+
+(
   first_login_home="$tmp/first-login-home"
   fake_bin="$tmp/first-login-bin"
   first_login_calls="$tmp/first-login-calls.log"

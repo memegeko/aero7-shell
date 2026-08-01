@@ -175,6 +175,13 @@ aero7_apps_install_defaults() {
   for recipe in $(aero7_recipe_list); do
     aero7_recipe_load "$recipe"
     case "$AERO7_APP_ID" in
+      winxplorer)
+        if [[ "${AERO7_INSTALL_WINXPLORER:-no}" != "yes" ]]; then
+          aero7_info "Skipping optional WinXplorer compatibility browser."
+          aero7_state_append "skipped_applications" "winxplorer: disabled by default"
+          continue
+        fi
+        ;;
       sevulet)
         aero7_prompt_optional_app AERO7_INSTALL_SEVULET "Sevulet" || {
           aero7_info "User skipped Sevulet."
@@ -201,6 +208,50 @@ aero7_apps_install_defaults() {
   if [[ "${#failures[@]}" -gt 0 ]]; then
     aero7_warn "Nonfatal application failures: ${failures[*]}"
   fi
+}
+
+aero7_install_application_branding() {
+  if aero7_dry_run; then
+    aero7_info "Would install Aero7 application names and icons for the target user."
+    return 0
+  fi
+
+  local applications_dir desktop_file tmp
+  applications_dir="$AERO7_HOME/.local/share/applications"
+  desktop_file="$applications_dir/org.kde.konsole.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Command Prompt
+GenericName=Terminal
+Comment=Use the command line
+Exec=konsole
+Icon=terminal
+Categories=Qt;KDE;System;TerminalEmulator;
+StartupNotify=true
+Terminal=false
+X-DBUS-StartupType=Unique
+X-DBUS-ServiceName=org.kde.konsole
+EOF
+  chmod 0644 "$tmp"
+  aero7_user_run install -d -m 0755 "$applications_dir"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
+
+  # Hide WinXplorer on upgraded systems as well as omitting it from new images.
+  desktop_file="$applications_dir/org.aero7.winxplorer.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Hidden=true
+EOF
+  chmod 0644 "$tmp"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
 }
 
 aero7_apps_may_need_aur() {
