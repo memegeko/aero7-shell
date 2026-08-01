@@ -56,13 +56,24 @@ for recipe in "$repo"/recipes/*.sh; do
   fi
   if [[ "$AERO7_APP_INSTALL_KIND" == "binary" ]]; then
     [[ -n "${AERO7_APP_BINARY_PACKAGE:-}" ]] || fail "$(basename "$recipe") lacks signed repository package"
-    grep -Fqx "$AERO7_APP_BINARY_PACKAGE" "$repo/config/companion-packages.conf" ||
-      fail "$(basename "$recipe") binary package is not in companion-packages.conf"
+    if ! grep -Fqx "$AERO7_APP_BINARY_PACKAGE" "$repo/config/companion-packages.conf"; then
+      application_row="$(awk -F'|' -v id="$AERO7_APP_ID" '$1 == id { print; exit }' "$repo/config/applications.conf")"
+      [[ -n "$application_row" ]] ||
+        fail "$(basename "$recipe") omitted binary package has no application policy"
+      IFS='|' read -r _ _ _ optional_prompt application_status <<<"$application_row"
+      [[ -n "$optional_prompt" && "$application_status" == "optional" ]] ||
+        fail "$(basename "$recipe") binary package is neither a default companion nor optional"
+    fi
   fi
   if [[ "$AERO7_APP_AVAILABLE" == "no" ]]; then
     [[ "$AERO7_APP_BUILD_COMMAND" == disabled* ]] || fail "$(basename "$recipe") disabled recipe has executable-looking build command"
     [[ -n "${AERO7_APP_REASON:-}" ]] || fail "$(basename "$recipe") disabled recipe lacks reason"
   fi
 done
+
+! grep -Fqx winxplorer "$repo/config/companion-packages.conf" ||
+  fail "WinXplorer unexpectedly returned to the default companion set"
+grep -Eq '^winxplorer\|[^|]+\|[^|]*\|InstallWinXplorer\|optional$' "$repo/config/applications.conf" ||
+  fail "WinXplorer is not explicitly guarded as an optional application"
 
 printf 'test-recipes: ok\n'
