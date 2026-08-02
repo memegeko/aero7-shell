@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="docs/assets/aero7-logo.png" width="150" alt="Aero7 logo">
+
 # Aero7-shell
 
 ### A Windows 7-inspired Plasma 6 desktop for Arch Linux
