@@ -37,7 +37,7 @@ for recipe in "$repo"/recipes/*.sh; do
   bash -n "$recipe" || fail "syntax failed: $recipe"
   unset AERO7_APP_ID AERO7_APP_NAME AERO7_APP_AUTHOR AERO7_APP_SUPPORTED_SESSION
   unset AERO7_APP_BUILD_SYSTEM AERO7_APP_INSTALL_KIND AERO7_APP_FATAL
-  unset AERO7_APP_EXPERIMENTAL AERO7_APP_AVAILABLE AERO7_APP_AUR_PACKAGE
+  unset AERO7_APP_EXPERIMENTAL AERO7_APP_AVAILABLE AERO7_APP_AUR_PACKAGE AERO7_APP_BINARY_PACKAGE
   unset AERO7_APP_SOURCE_URL AERO7_APP_BRANCH AERO7_APP_BUILD_COMMAND
   unset AERO7_APP_INSTALL_COMMAND AERO7_APP_VALIDATE_COMMAND AERO7_APP_UNINSTALL_METADATA
   unset AERO7_APP_PLASMA6_COMPAT AERO7_APP_WAYLAND_COMPAT AERO7_APP_LICENSE
@@ -54,10 +54,26 @@ for recipe in "$repo"/recipes/*.sh; do
   if [[ "$AERO7_APP_INSTALL_KIND" == "aur" ]]; then
     [[ -n "${AERO7_APP_AUR_PACKAGE:-}" ]] || fail "$(basename "$recipe") lacks AUR package"
   fi
+  if [[ "$AERO7_APP_INSTALL_KIND" == "binary" ]]; then
+    [[ -n "${AERO7_APP_BINARY_PACKAGE:-}" ]] || fail "$(basename "$recipe") lacks signed repository package"
+    if ! grep -Fqx "$AERO7_APP_BINARY_PACKAGE" "$repo/config/companion-packages.conf"; then
+      application_row="$(awk -F'|' -v id="$AERO7_APP_ID" '$1 == id { print; exit }' "$repo/config/applications.conf")"
+      [[ -n "$application_row" ]] ||
+        fail "$(basename "$recipe") omitted binary package has no application policy"
+      IFS='|' read -r _ _ _ optional_prompt application_status <<<"$application_row"
+      [[ -n "$optional_prompt" && "$application_status" == "optional" ]] ||
+        fail "$(basename "$recipe") binary package is neither a default companion nor optional"
+    fi
+  fi
   if [[ "$AERO7_APP_AVAILABLE" == "no" ]]; then
     [[ "$AERO7_APP_BUILD_COMMAND" == disabled* ]] || fail "$(basename "$recipe") disabled recipe has executable-looking build command"
     [[ -n "${AERO7_APP_REASON:-}" ]] || fail "$(basename "$recipe") disabled recipe lacks reason"
   fi
 done
+
+! grep -Fqx winxplorer "$repo/config/companion-packages.conf" ||
+  fail "WinXplorer unexpectedly returned to the default companion set"
+grep -Eq '^winxplorer\|[^|]+\|[^|]*\|InstallWinXplorer\|optional$' "$repo/config/applications.conf" ||
+  fail "WinXplorer is not explicitly guarded as an optional application"
 
 printf 'test-recipes: ok\n'

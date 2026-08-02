@@ -10,7 +10,7 @@ aero7_recipe_clear() {
   unset AERO7_APP_REF AERO7_APP_LICENSE AERO7_APP_DEPENDENCIES
   unset AERO7_APP_OPTIONAL_DEPENDENCIES AERO7_APP_SUPPORTED_SESSION
   unset AERO7_APP_BUILD_SYSTEM AERO7_APP_SOURCE_SUBDIR AERO7_APP_INSTALL_KIND
-  unset AERO7_APP_AUR_PACKAGE AERO7_APP_VALIDATE_COMMAND AERO7_APP_FATAL
+  unset AERO7_APP_AUR_PACKAGE AERO7_APP_BINARY_PACKAGE AERO7_APP_VALIDATE_COMMAND AERO7_APP_FATAL
   unset AERO7_APP_EXPERIMENTAL AERO7_APP_AVAILABLE AERO7_APP_REASON
   unset AERO7_APP_BRANCH AERO7_APP_BUILD_COMMAND AERO7_APP_INSTALL_COMMAND
   unset AERO7_APP_UNINSTALL_METADATA AERO7_APP_PLASMA6_COMPAT AERO7_APP_WAYLAND_COMPAT
@@ -65,11 +65,15 @@ aero7_app_validate_current_recipe() {
 }
 
 aero7_app_signed_package_available_current_recipe() {
-  [[ "${AERO7_APP_INSTALL_KIND:-}" == "aur" ]] || return 1
-  [[ -n "${AERO7_APP_AUR_PACKAGE:-}" ]] || return 1
+  local package="${AERO7_APP_BINARY_PACKAGE:-${AERO7_APP_AUR_PACKAGE:-}}"
+  case "${AERO7_APP_INSTALL_KIND:-}" in
+    aur|binary) ;;
+    *) return 1 ;;
+  esac
+  [[ -n "$package" ]] || return 1
   [[ "$(aero7_state_get binary_repo_ready 2>/dev/null || printf no)" == "yes" ]] || return 1
   aero7_binary_repo_load_config
-  aero7_binary_repo_package_available "$AERO7_APP_AUR_PACKAGE"
+  aero7_binary_repo_package_available "$package"
 }
 
 aero7_app_install_current_recipe() {
@@ -98,6 +102,18 @@ aero7_app_install_current_recipe() {
           aero7_binary_repo_install_named_packages "$AERO7_APP_AUR_PACKAGE" || return 1
       else
         aero7_yay_install_packages "$AERO7_APP_AUR_PACKAGE" || return 1
+      fi
+      ;;
+    binary)
+      [[ -n "${AERO7_APP_BINARY_PACKAGE:-}" ]] || aero7_die "$AERO7_APP_NAME recipe lacks a binary package."
+      if aero7_have pacman && aero7_pacman_installed "$AERO7_APP_BINARY_PACKAGE"; then
+        aero7_detail "$AERO7_APP_NAME is already installed."
+      elif aero7_app_signed_package_available_current_recipe; then
+        AERO7_BINARY_REPO_INSTALL_TITLE="Installing $AERO7_APP_NAME from signed Aero7 repository" \
+          aero7_binary_repo_install_named_packages "$AERO7_APP_BINARY_PACKAGE" || return 1
+      else
+        aero7_warn "$AERO7_APP_NAME requires the signed Aero7 repository package $AERO7_APP_BINARY_PACKAGE."
+        return 1
       fi
       ;;
     git-cmake)
@@ -160,11 +176,11 @@ aero7_apps_install_defaults() {
     aero7_recipe_load "$recipe"
     case "$AERO7_APP_ID" in
       winxplorer)
-        aero7_prompt_optional_app AERO7_INSTALL_WINXPLORER "WinXplorer" || {
-          aero7_info "User skipped WinXplorer."
-          aero7_state_append "skipped_applications" "winxplorer: user declined or noninteractive default"
+        if [[ "${AERO7_INSTALL_WINXPLORER:-no}" != "yes" ]]; then
+          aero7_info "Skipping optional WinXplorer compatibility browser."
+          aero7_state_append "skipped_applications" "winxplorer: disabled by default"
           continue
-        }
+        fi
         ;;
       sevulet)
         aero7_prompt_optional_app AERO7_INSTALL_SEVULET "Sevulet" || {
@@ -191,6 +207,55 @@ aero7_apps_install_defaults() {
 
   if [[ "${#failures[@]}" -gt 0 ]]; then
     aero7_warn "Nonfatal application failures: ${failures[*]}"
+  fi
+}
+
+aero7_install_application_branding() {
+  if aero7_dry_run; then
+    aero7_info "Would install Aero7 application names and icons for the target user."
+    return 0
+  fi
+
+  local applications_dir desktop_file tmp
+  applications_dir="$AERO7_HOME/.local/share/applications"
+  desktop_file="$applications_dir/org.kde.konsole.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Command Prompt
+GenericName=Terminal
+Comment=Use the command line
+Exec=konsole
+Icon=terminal
+Categories=Qt;KDE;System;TerminalEmulator;
+StartupNotify=true
+Terminal=false
+X-DBUS-StartupType=Unique
+X-DBUS-ServiceName=org.kde.konsole
+StartupWMClass=konsole
+EOF
+  chmod 0644 "$tmp"
+  aero7_user_run install -d -m 0755 "$applications_dir"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
+
+  # Hide WinXplorer on upgraded systems as well as omitting it from new images.
+  desktop_file="$applications_dir/org.aero7.winxplorer.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Hidden=true
+EOF
+  chmod 0644 "$tmp"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
+
+  if aero7_have kbuildsycoca6; then
+    aero7_user_run kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
   fi
 }
 

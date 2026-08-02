@@ -160,7 +160,11 @@ EOF
 
 aero7_validate_no_x11_packages_configured() {
   local package denied file
-  local files=("$AERO7_CONFIG_DIR/packages.conf" "$AERO7_CONFIG_DIR/aur-packages.conf")
+  local files=(
+    "$AERO7_CONFIG_DIR/packages.conf"
+    "$AERO7_CONFIG_DIR/aur-packages.conf"
+    "$AERO7_CONFIG_DIR/companion-packages.conf"
+  )
   for file in "${files[@]}"; do
     [[ -r "$file" ]] || continue
     while IFS= read -r denied; do

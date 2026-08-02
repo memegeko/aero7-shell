@@ -27,6 +27,9 @@ aero7_binary_repo_load_config() {
 
 aero7_binary_repo_packages() {
   aero7_load_package_file "$AERO7_CONFIG_DIR/aur-packages.conf"
+  if [[ -r "$AERO7_CONFIG_DIR/companion-packages.conf" ]]; then
+    aero7_load_package_file "$AERO7_CONFIG_DIR/companion-packages.conf"
+  fi
 }
 
 aero7_binary_repo_fingerprint_ready() {

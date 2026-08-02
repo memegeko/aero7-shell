@@ -2,9 +2,29 @@
 
 Application installation is recipe-driven. Each recipe declares its upstream, license, build system, dependencies, supported session, availability, fatality, and validation command.
 
-Available recipes in this first implementation:
+Available AUR recipes:
 
 - Linux Device Manager through `linux-devmgmt` from the AUR
-- TuxManager through `tuxmanager` from the AUR
+- Task Manager through `tuxmanager` from the AUR
 
-Disabled or unavailable recipes are present for Aero Dolphin, Aero Gwenview, Linux Control Panel, Aero KolourPaint, Gadgets, WinXplorer, execbin, LinVer, and Sevulet until their authoritative upstream repositories, replacement behavior, and current build systems are confirmed. Optional app failures are reported without destroying the core desktop installation.
+Available signed Aero7 companion packages:
+
+- File Explorer (`aero7-dolphin`), replacing stock Dolphin
+- Photo Viewer (`aero7-gwenview`), replacing stock Gwenview
+- Linux Control Panel (`linux-control-panel`)
+- Aero KolourPaint (`aero7-kolourpaint`), replacing stock KolourPaint
+- original Plasma 6 Clock, CPU Meter, and Notes widgets (`aero7-gadgets`)
+- WinXplorer (`winxplorer`, optional compatibility browser)
+- execbin Run dialog (`execbin`)
+- LinVer system information (`linver`)
+
+The first four use the clean-room MIT `aero7-qt` compatibility layer instead of
+the unlicensed upstream `libAeroQt`. The gadgets are Aero7-owned source.
+WinXplorer's bitmap controls and navigation sound were removed, while execbin
+and LinVer use documented original Aero7 branding. All repositories are pinned
+to exact revisions in `aero7-repo` and the companion packages never fall back
+to unpinned AUR builds.
+
+Sevulet remains disabled: its source is not anonymously accessible and no
+distributable license has been verified. Optional application failures remain
+nonfatal to the core desktop installation.

@@ -74,7 +74,9 @@ export AERO7_STATE_ROOT_OVERRIDE="$tmp/origin-state"
 aero7_state_init
 aero7_binary_repo_install_packages >/dev/null
 [[ "$(aero7_state_get aero_packages_origin)" == "binary" ]] || fail "binary install did not record binary origin"
-[[ "$(aero7_state_unique_file package_origin | wc -l | tr -d ' ')" -eq 8 ]] || fail "binary install did not record all package origins"
+expected_binary_packages="$(aero7_binary_repo_packages | wc -l | tr -d ' ')"
+[[ "$(aero7_state_unique_file package_origin | wc -l | tr -d ' ')" -eq "$expected_binary_packages" ]] ||
+  fail "binary install did not record all package origins"
 
 (
   export AERO7_DRY_RUN=1

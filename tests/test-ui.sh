@@ -47,6 +47,41 @@ set -e
 [[ "$failure_output" == *"failure-hidden-2"* ]] || fail "failure output did not include useful tail"
 grep -q 'failure-hidden-1' "$AERO7_LOG_FILE" || fail "failure output was not saved to log"
 
+(
+  AERO7_USER=image-user
+  AERO7_HOME="$tmp/image-home"
+  AERO7_LOG_DIR="$AERO7_HOME/.local/state/aero7-shell/logs"
+  unset AERO7_LOG_FILE
+  sudo_calls="$tmp/image-mode-sudo-calls"
+  direct_touch="$tmp/image-mode-direct-touch"
+
+  id() {
+    if [[ "${1:-}" == "-un" ]]; then
+      printf 'root\n'
+      return 0
+    fi
+    command id "$@"
+  }
+
+  sudo() {
+    printf '%q ' "$@" >>"$sudo_calls"
+    printf '\n' >>"$sudo_calls"
+    [[ "${1:-}" == "-H" && "${2:-}" == "-u" && "${3:-}" == "$AERO7_USER" ]] || return 98
+    shift 3
+    command "$@"
+  }
+
+  touch() {
+    printf 'direct touch attempted\n' >"$direct_touch"
+    return 97
+  }
+
+  aero7_logging_init image-mode-test
+  [[ -f "$AERO7_LOG_FILE" ]] || fail "image-mode log file was not created"
+  [[ ! -e "$direct_touch" ]] || fail "image-mode log file was created directly by root"
+  grep -q -- '-H -u image-user touch ' "$sudo_calls" || fail "image-mode log file was not created as the target user"
+)
+
 AERO7_DEBUG=1
 export AERO7_DEBUG
 debug_output="$(aero7_run bash -lc 'printf "debug-visible\n"' 2>&1)"
