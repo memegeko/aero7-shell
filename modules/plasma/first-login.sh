@@ -72,18 +72,10 @@ if config_true Theme; then
     plasma-apply-lookandfeel -a "$lookandfeel" || true
   fi
 
-  if command -v kwriteconfig6 >/dev/null 2>&1; then
-    [[ -n "$lookandfeel" ]] && kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage "$lookandfeel"
-    kwriteconfig6 --file kdeglobals --group General --key ColorScheme "$color_scheme"
-    kwriteconfig6 --file kdeglobals --group General --key AccentColor "0,0,0,0"
-    kwriteconfig6 --file kdeglobals --group General --key accentColorFromWallpaper --type bool false
-    kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle kvantum
-    kwriteconfig6 --file plasmarc --group Theme --key name "$desktop_theme"
-    kwriteconfig6 --file kvantum.kvconfig --group General --key theme "$kvantum_theme"
-    kwriteconfig6 --file kcminputrc --group Mouse --key cursorTheme "$cursor_theme"
-    kwriteconfig6 --file kcminputrc --group Mouse --key cursorSize 32
-  fi
-
+  # Apply the light colors and desktop theme before pinning their config keys.
+  # plasma-apply-* deliberately does nothing when the requested value is
+  # already present in the config file. Writing the value first therefore
+  # leaves the dark theme loaded in memory after the Aero look-and-feel runs.
   if command -v plasma-apply-colorscheme >/dev/null 2>&1; then
     plasma-apply-colorscheme "$color_scheme" || true
   fi
@@ -95,6 +87,18 @@ if config_true Theme; then
   fi
   if command -v plasma-apply-cursortheme >/dev/null 2>&1; then
     plasma-apply-cursortheme "$cursor_theme" --size 32 || true
+  fi
+
+  if command -v kwriteconfig6 >/dev/null 2>&1; then
+    [[ -n "$lookandfeel" ]] && kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage "$lookandfeel"
+    kwriteconfig6 --file kdeglobals --group General --key ColorScheme "$color_scheme"
+    kwriteconfig6 --file kdeglobals --group General --key AccentColor "0,0,0,0"
+    kwriteconfig6 --file kdeglobals --group General --key accentColorFromWallpaper --type bool false
+    kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle kvantum
+    kwriteconfig6 --file plasmarc --group Theme --key name "$desktop_theme"
+    kwriteconfig6 --file kvantum.kvconfig --group General --key theme "$kvantum_theme"
+    kwriteconfig6 --file kcminputrc --group Mouse --key cursorTheme "$cursor_theme"
+    kwriteconfig6 --file kcminputrc --group Mouse --key cursorSize 32
   fi
 
   # Applying the Aero look-and-feel on top of Plasma's initial layout can leave

@@ -343,10 +343,17 @@ EOF
   [[ ! -L "$first_login_home/.config/systemd/user/plasma-workspace.target.wants/aero7-first-login.service" ]] || fail "deferred Plasma helper did not disable itself"
   grep -Fq 'plasma-apply-lookandfeel -a authui7' "$first_login_calls" || fail "deferred Plasma helper did not apply the global theme"
   grep -Fq 'plasma-apply-colorscheme Aero7Light' "$first_login_calls" || fail "deferred Plasma helper did not apply the light color scheme"
+  grep -Fq 'plasma-apply-desktoptheme breeze-light' "$first_login_calls" || fail "deferred Plasma helper did not apply the light desktop theme"
   grep -Fq 'kvantummanager --set Windows7Aero' "$first_login_calls" || fail "deferred Plasma helper did not apply the Aero widget theme"
   grep -Fq 'io.gitgud.wackyideas.panel' "$first_login_calls" || fail "deferred Plasma helper did not repair duplicate panels"
   grep -Fq 'layout-test-script' "$first_login_calls" || fail "deferred Plasma helper did not apply the layout"
   grep -Fq 'wallpaper-test-script' "$first_login_calls" || fail "deferred Plasma helper did not apply the wallpaper"
+  color_apply_line="$(grep -n -m1 'plasma-apply-colorscheme Aero7Light' "$first_login_calls" | cut -d: -f1)"
+  color_write_line="$(grep -n -m1 'kwriteconfig6 --file kdeglobals --group General --key ColorScheme Aero7Light' "$first_login_calls" | cut -d: -f1)"
+  desktop_apply_line="$(grep -n -m1 'plasma-apply-desktoptheme breeze-light' "$first_login_calls" | cut -d: -f1)"
+  desktop_write_line="$(grep -n -m1 'kwriteconfig6 --file plasmarc --group Theme --key name breeze-light' "$first_login_calls" | cut -d: -f1)"
+  [[ "$color_apply_line" -lt "$color_write_line" ]] || fail "light color scheme was pinned before Plasma could reload it"
+  [[ "$desktop_apply_line" -lt "$desktop_write_line" ]] || fail "light desktop theme was pinned before Plasma could reload it"
 )
 
 mkdir -p "$root/usr/share/sddm/themes"
