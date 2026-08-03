@@ -107,13 +107,11 @@ aero7_preferred_wallpaper_source() {
     aero7_warn "Configured wallpaper is not approved or missing: $configured"
   fi
 
-  for candidate in \
-    "$AERO7_ROOT/assets/wallpapers/aero7-background.png"; do
-    [[ -f "$candidate" ]] || continue
-    aero7_wallpaper_is_allowed "$candidate" || continue
+  candidate="$AERO7_ROOT/assets/wallpapers/aero7-background.png"
+  if [[ -f "$candidate" ]] && aero7_wallpaper_is_allowed "$candidate"; then
     printf '%s\n' "$candidate"
     return 0
-  done
+  fi
   aero7_debug "No approved wallpaper is currently distributed."
   return 1
 }
