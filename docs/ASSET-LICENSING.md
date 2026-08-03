@@ -9,7 +9,7 @@ Only assets listed here may be distributed by Aero7-shell.
 | `assets/wallpapers/aero_bg_1.png` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero_bg_2.jpeg` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero_bg_3.jpg` | Aero7-shell contributors | Original custom Aero7-shell wallpaper artwork | MIT | Yes | Preserve repository licence notice |
-| `docs/assets/aero7-logo.png` | Aero7 project owner | Transparent AI-generated circular Aero7 7 emblem supplied on 2026-08-02 | Project-owner-approved copyright-free artwork | Yes | Preserve this provenance entry |
+| `docs/assets/aero7-logo.png` | Aero7 project owner | Circular AI-generated Aero7 7 emblem supplied on 2026-08-03; background isolated with OpenAI's image editor and removed with a chroma-key pass | Project-owner-approved copyright-free artwork | Yes | Preserve this provenance entry |
 
 ## Documentation Screenshots
 
