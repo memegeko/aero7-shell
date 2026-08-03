@@ -42,10 +42,10 @@ Aero7-shell installs and configures the Arch `plymouth` package with distributio
 
 ## Bundled Project Assets
 
-The safe avatar `assets/avatars/aero7-user.png` and all three images in
-`assets/wallpapers/` are original Aero7-shell artwork released under the MIT
-license with the rest of this repository. The installer registers all three as
-KDE wallpaper packages and selects `aero_bg_1.png` by default.
+The safe avatar `assets/avatars/aero7-user.png` is original Aero7-shell artwork
+released under the MIT license. The project-owner-supplied
+`assets/wallpapers/aero7-background.png` is the only registered KDE wallpaper
+package and the default desktop background.
 
 Aero7-shell does not install Microsoft wallpaper files, Windows-logo
 wallpapers, or `usertile*.bmp` avatar files.

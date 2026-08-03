@@ -10,7 +10,7 @@ aero7_wallpaper_is_allowed() {
   local base
   base="$(basename -- "$file")"
   case "$base" in
-    aero_bg_1.png|aero_bg_2.jpeg|aero_bg_3.jpg) return 0 ;;
+    aero7-background.png) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -22,18 +22,10 @@ aero7_wallpaper_package_field() {
   base="$(basename -- "$file")"
 
   case "$base:$field" in
-    aero_bg_1.png:id) printf '%s\n' "Aero7ShellDefault" ;;
-    aero_bg_1.png:name) printf '%s\n' "Aero7-shell Default" ;;
-    aero_bg_1.png:resolution) printf '%s\n' "1920x1080" ;;
-    aero_bg_1.png:extension) printf '%s\n' "png" ;;
-    aero_bg_2.jpeg:id) printf '%s\n' "Aero7ShellArch" ;;
-    aero_bg_2.jpeg:name) printf '%s\n' "Aero7-shell Arch" ;;
-    aero_bg_2.jpeg:resolution) printf '%s\n' "596x335" ;;
-    aero_bg_2.jpeg:extension) printf '%s\n' "jpeg" ;;
-    aero_bg_3.jpg:id) printf '%s\n' "Aero7ShellAurora" ;;
-    aero_bg_3.jpg:name) printf '%s\n' "Aero7-shell Aurora" ;;
-    aero_bg_3.jpg:resolution) printf '%s\n' "2560x1600" ;;
-    aero_bg_3.jpg:extension) printf '%s\n' "jpg" ;;
+    aero7-background.png:id) printf '%s\n' "Aero7ShellDefault" ;;
+    aero7-background.png:name) printf '%s\n' "Aero7" ;;
+    aero7-background.png:resolution) printf '%s\n' "1672x941" ;;
+    aero7-background.png:extension) printf '%s\n' "png" ;;
     *) return 1 ;;
   esac
 }
@@ -116,9 +108,7 @@ aero7_preferred_wallpaper_source() {
   fi
 
   for candidate in \
-    "$AERO7_ROOT/assets/wallpapers/aero_bg_1.png" \
-    "$AERO7_ROOT/assets/wallpapers/aero_bg_2.jpeg" \
-    "$AERO7_ROOT/assets/wallpapers/aero_bg_3.jpg"; do
+    "$AERO7_ROOT/assets/wallpapers/aero7-background.png"; do
     [[ -f "$candidate" ]] || continue
     aero7_wallpaper_is_allowed "$candidate" || continue
     printf '%s\n' "$candidate"

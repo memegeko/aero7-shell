@@ -10,7 +10,7 @@
 
 A standalone, resumable installer for turning a fresh Arch Linux system into a
 polished KDE Plasma Wayland desktop with AeroThemePlasma, AeroShell, matching
-applications, custom wallpapers, Plymouth, SDDM, Fastfetch, and Wine integration.
+applications, a custom wallpaper, Plymouth, SDDM, Fastfetch, and Wine integration.
 
 [![syntax](https://github.com/memegeko/aero7-shell/actions/workflows/syntax.yml/badge.svg)](https://github.com/memegeko/aero7-shell/actions/workflows/syntax.yml)
 [![shellcheck](https://github.com/memegeko/aero7-shell/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/memegeko/aero7-shell/actions/workflows/shellcheck.yml)
@@ -123,7 +123,7 @@ product and does not ship Microsoft-owned assets.
 
 | Area | Included setup |
 | --- | --- |
-| Desktop | KDE Plasma 6 Wayland, AeroThemePlasma, AeroShell, layout, icons, colors, sounds, and custom wallpapers |
+| Desktop | KDE Plasma 6 Wayland, AeroThemePlasma, AeroShell, layout, icons, colors, sounds, and a custom wallpaper |
 | Login and boot | SDDM configuration and [PlymouthVista](https://github.com/furkrn/PlymouthVista) fetched directly from upstream |
 | Applications | Compatible Aero applications through verified package recipes |
 | System tools | NetworkManager, Fastfetch, terminal compatibility commands, and `yay` when needed |

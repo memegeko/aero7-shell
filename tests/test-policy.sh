@@ -435,8 +435,8 @@ fi
   aero7_sudo_run() { "$@"; }
   aero7_user_run() { "$@"; }
   aero7_wallpaper_package_field() { return 1; }
-  aero7_install_wallpaper_asset "$repo/assets/wallpapers/aero_bg_1.png"
-  [[ -f "$AERO7_ASSET_DIR/wallpapers/aero_bg_1.png" ]] ||
+  aero7_install_wallpaper_asset "$repo/assets/wallpapers/aero7-background.png"
+  [[ -f "$AERO7_ASSET_DIR/wallpapers/aero7-background.png" ]] ||
     fail "wallpaper installer did not create its destination directory"
 )
 
