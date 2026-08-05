@@ -1,51 +1,65 @@
-# Third-Party Sources
+# Third-party sources, licences, and trademarks
 
-Aero7-shell does not vendor third-party application source. It records upstreams and installs or clones them during installation through explicit recipes.
+Aero7-shell records the third-party components selected by the installer. The
+signed package repository builds the packages and installs their full licence
+files under `/usr/share/licenses`.
 
-On Arch Linux, the full AeroThemePlasma shell is installed from AUR packages.
-Those packages include patched AeroShell Plasma providers, including a
-`libplasma` provider, so they should be tested in a VM before use on a daily
-driver system.
+## Independent-project and trademark notice
 
-## Core Theme and Shell
+Aero7 is an independent project and is not affiliated with, authorized,
+sponsored, endorsed, or approved by Microsoft Corporation. Windows and other
+Microsoft product names are trademarks of the Microsoft group of companies.
+Microsoft trademarks are used only for truthful, descriptive references to an
+upstream project's design target. No Microsoft sponsorship or compatibility
+certification is claimed.
 
-| Component | Source | License |
-| --- | --- | --- |
-| AeroThemePlasma | https://github.com/aeroshell-desktop/aerothemeplasma | AGPL-3.0-or-later |
-| AeroShell workspace | https://github.com/aeroshell-desktop/aeroshell-workspace | See upstream |
-| AeroShell KWin components | https://github.com/aeroshell-desktop/aeroshell-kwin-components | See upstream |
-| AeroShell libplasma | https://gitgud.io/aeroshell/libplasma | See upstream |
-| AeroShell SMOD | https://gitgud.io/aeroshell/smod | See upstream |
-| AeroThemePlasma icons | https://gitgud.io/aeroshell/atp/aerothemeplasma-icons | See upstream |
-| AeroThemePlasma sounds | https://gitgud.io/aeroshell/atp/aerothemeplasma-sounds | See upstream |
-| UAC Polkit Agent | https://github.com/aeroshell-desktop/uac-polkit-agent | GPL-3.0-or-later |
+## Core theme and shell
+
+| Component | Source | Declared software licence | Notes |
+| --- | --- | --- | --- |
+| Aero7 AeroThemePlasma fork | `https://github.com/memegeko/aerothemeplasma` | AGPL-3.0-or-later, plus per-directory notices | Replaces runtime Microsoft logos only; screenshots and non-logo theme resources remain upstream |
+| AeroShell workspace | `https://github.com/aeroshell-desktop/aeroshell-workspace` | AGPL-3.0-or-later | Signed package |
+| AeroShell KWin components | `https://github.com/aeroshell-desktop/aeroshell-kwin-components` | AGPL-3.0-or-later | Signed package |
+| AeroShell libplasma | `https://gitgud.io/aeroshell/libplasma` | LGPL-2.0-or-later | Signed package |
+| AeroShell SMOD | `https://gitgud.io/aeroshell/smod` | AGPL-3.0-or-later | Signed package |
+| AeroThemePlasma icons | `https://gitgud.io/aeroshell/atp/aerothemeplasma-icons` | AGPL-3.0-or-later software notice; upstream attributes relevant visual assets to Microsoft | Retained by project-owner decision with upstream notices |
+| AeroThemePlasma sounds | `https://gitgud.io/aeroshell/atp/aerothemeplasma-sounds` | AGPL-3.0-or-later software notice; upstream attributes relevant sound assets to Microsoft | Retained by project-owner decision with upstream notices |
+| UAC Polkit Agent | `https://github.com/aeroshell-desktop/uac-polkit-agent` | GPL-3.0-or-later | Signed package |
+
+Open-source software licences do not grant rights to separately owned artwork.
+The icon and sound attribution notices are retained so downstream distributors
+can make an informed rights decision; they do not establish that Microsoft has
+authorized redistribution.
 
 ## Applications
 
-| Application | Source | Current recipe status |
+| Application | Source | Declared licence and status |
 | --- | --- | --- |
-| Aero Dolphin | https://gitgud.io/atmk/dolphin-aero | Signed `aero7-dolphin`; patched to the clean-room MIT Aero7Qt layer |
-| Aero Gwenview | https://gitgud.io/atmk/gwenview-aero | Signed `aero7-gwenview`; original code-drawn controls and MIT Aero7Qt layer |
-| Aero KolourPaint | https://invent.kde.org/albert-tomanek/kolourpaint/-/tree/saribbon-aero | Signed `aero7-kolourpaint`; MIT SARibbon and MIT Aero7Qt layer |
-| Linux Control Panel | https://github.com/actuallyaridan/linux-control | Signed `linux-control-panel`; patched to the MIT Aero7Qt layer |
-| Linux Device Manager | https://github.com/actuallyaridan/linux-devmgmt | AUR recipe available: `linux-devmgmt` |
-| TuxManager | https://github.com/benapetr/TuxManager | AUR recipe available: `tuxmanager` |
-| Gadgets | Aero7-owned source in `aero7-repo` | Signed `aero7-gadgets`; original Clock, CPU Meter, and Notes widgets |
-| WinXplorer | https://gitgud.io/catpswin56/winxplorer | Signed `winxplorer`; bundled bitmap controls and navigation sound removed |
-| execbin/run dialog | https://gitgud.io/catpswin56/execbin | Signed `execbin`; bundled icons replaced with documented original artwork |
-| LinVer | https://gitgud.io/wackyideas/linver | Signed `linver`; bundled version branding replaced with documented original artwork |
-| Sevulet | https://gitgud.io/snailatte/sevulet | Project identified, but anonymous source access and a distributable license could not be verified |
+| Aero Dolphin | `https://gitgud.io/atmk/dolphin-aero` | LGPL-2.0-or-later; signed Aero7 package |
+| Aero Gwenview | `https://gitgud.io/atmk/gwenview-aero` | GPL-2.0-or-later and LGPL-2.0-or-later; signed Aero7 package |
+| Aero KolourPaint | `https://invent.kde.org/albert-tomanek/kolourpaint/-/tree/saribbon-aero` | GPL/LGPL/MIT components; signed Aero7 package |
+| Linux Control Panel | `https://github.com/actuallyaridan/linux-control` | GPL-3.0-or-later; signed Aero7 package |
+| Linux Device Manager | `https://github.com/actuallyaridan/linux-devmgmt` | MIT |
+| TuxManager | `https://github.com/benapetr/TuxManager` | GPL-3.0-or-later |
+| Gadgets | Aero7-owned source in `aero7-repo` | MIT |
+| execbin/run dialog | `https://gitgud.io/catpswin56/execbin` | AGPL-3.0-or-later; bundled logos replaced by Aero7 artwork |
+| LinVer | `https://gitgud.io/wackyideas/linver` | AGPL-3.0-or-later; bundled branding replaced by Aero7 artwork |
+| WinXplorer | `https://gitgud.io/catpswin56/winxplorer` | GPL-3.0-or-later; optional and not installed by the ISO |
+| Sevulet | `https://gitgud.io/snailatte/sevulet` | Not distributed because anonymous source access and a distributable licence were not verified |
 
 ## Plymouth
 
-Aero7-shell installs and configures the Arch `plymouth` package with distribution-provided themes only. It does not install PlymouthVista or Microsoft-branded boot assets.
+The shell supports configuring PlymouthVista when explicitly selected by a
+consumer such as the Aero7 ISO. PlymouthVista software is MIT-licensed, while
+its upstream README attributes the bundled visual resources to Microsoft. The
+ISO keeps a pinned copy and its full notice. Plymouth is intentionally unchanged
+in the present logo-cleanup work.
 
-## Bundled Project Assets
+## Bundled project assets
 
-The safe avatar `assets/avatars/aero7-user.png` is original Aero7-shell artwork
-released under the MIT license. The project-owner-supplied
-`assets/wallpapers/aero7-background.png` is the only registered KDE wallpaper
-package and the default desktop background.
-
-Aero7-shell does not install Microsoft wallpaper files, Windows-logo
-wallpapers, or `usertile*.bmp` avatar files.
+`assets/avatars/aero7-user.png` is original Aero7-shell artwork under the
+repository MIT licence. `assets/wallpapers/aero7-background.png` and
+`docs/assets/aero7-logo.png` are project-owner-supplied Aero7 artwork with their
+provenance recorded in `docs/ASSET-LICENSING.md`. Documentation screenshots are
+left unchanged until the release screenshot pass and must not be reused as
+standalone artwork.
