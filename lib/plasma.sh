@@ -688,8 +688,16 @@ aero7_preseed_atp_user_config() {
   done
 
   if ! aero7_graphical_session_available; then
-    aero7_schedule_first_login_theme "$lookandfeel" "$color_scheme" "$desktop_theme" "$kvantum_theme" "$cursor_theme" || \
-      aero7_warn "Could not schedule Aero theme application for the first Plasma login."
+    if [[ "${AERO7_IMAGE_MODE:-0}" == "1" ]]; then
+      # The ISO installer writes both the user config and kdedefaults before
+      # the first graphical login. Reapplying the look-and-feel after
+      # plasmashell starts causes a visible stock-Plasma frame and can replace
+      # the already selected light theme in memory.
+      aero7_info "Image mode preseeded the Aero theme; no deferred live theme pass is required."
+    else
+      aero7_schedule_first_login_theme "$lookandfeel" "$color_scheme" "$desktop_theme" "$kvantum_theme" "$cursor_theme" || \
+        aero7_warn "Could not schedule Aero theme application for the first Plasma login."
+    fi
   fi
 }
 

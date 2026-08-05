@@ -226,6 +226,11 @@ grep -Fq 'ForegroundNormal=0,0,0' <<<"$scheme_text" || fail "Aero7 light color s
   grep -Fq -- '--file plasmashellrc --group PlasmaViews --group Panel 2 --key panelOpacity 2' "$write_log" || fail "Plasma preseed did not request a translucent Aero taskbar"
   grep -Fq -- "--file $AERO7_HOME/.config/kdedefaults/plasmashellrc --group PlasmaViews --group Panel 2 --key panelOpacity 2" "$write_log" || fail "Plasma preseed did not pin the translucent taskbar default"
   grep -Fq -- '--file '"$AERO7_HOME"'/.config/aero7-shell/first-loginrc --group Actions --key Theme --type bool true' "$write_log" || fail "headless Plasma install did not schedule first-login theme application"
+
+  : >"$write_log"
+  export AERO7_IMAGE_MODE=1
+  aero7_apply_plasma_theme >/dev/null
+  ! grep -Fq -- 'first-loginrc --group Actions --key Theme' "$write_log" || fail "image mode still scheduled a visible first-login theme reapply"
 )
 
 (
@@ -449,6 +454,15 @@ fi
   aero7_install_wallpaper_asset "$repo/assets/wallpapers/aero7-background.png"
   [[ -f "$AERO7_ASSET_DIR/wallpapers/aero7-background.png" ]] ||
     fail "wallpaper installer did not create its destination directory"
+
+  export AERO7_IMAGE_MODE=1
+  aero7_config_value() { printf 'true\n'; }
+  aero7_preferred_wallpaper_source() { printf '%s\n' "$repo/assets/wallpapers/aero7-background.png"; }
+  aero7_wallpaper_kde_image_path() { printf '%s\n' "$AERO7_ASSET_DIR/wallpapers/aero7-background.png"; }
+  aero7_schedule_first_login_action() { fail "image mode scheduled a visible first-login wallpaper reapply"; }
+  aero7_apply_wallpaper
+  [[ ! -e "$AERO7_CACHE_DIR/aero7-wallpaper.js" ]] ||
+    fail "image mode staged a redundant first-login wallpaper script"
 )
 
 (

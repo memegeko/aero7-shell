@@ -172,6 +172,15 @@ aero7_apply_wallpaper() {
   fi
 
   [[ -f "$installed" ]] || aero7_install_wallpaper_asset "$source"
+  if [[ "${AERO7_IMAGE_MODE:-0}" == "1" ]]; then
+    # AeroThemePlasma's custom shell selects Aero7ShellDefault before it loads
+    # the taskbar template. Scheduling a second wallpaper write for the first
+    # login only delays completion and exposes Plasma's stock wallpaper while
+    # the helper waits for D-Bus.
+    aero7_info "Image mode uses the preseeded Aero7 shell wallpaper; no deferred wallpaper pass is required."
+    return 0
+  fi
+
   script="$AERO7_CACHE_DIR/aero7-wallpaper.js"
   aero7_user_run install -d -m 0755 "$AERO7_CACHE_DIR"
   cat >"$script" <<EOF
