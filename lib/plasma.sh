@@ -537,7 +537,7 @@ aero7_plasma_desktop_theme_available() {
 
 aero7_find_plasma_desktop_theme() {
   local candidate dir theme
-  for candidate in breeze-light default Seven Aero Seven-Black; do
+  for candidate in Aero7 breeze-light default Seven Aero Seven-Black; do
     if aero7_plasma_desktop_theme_available "$candidate"; then
       printf '%s\n' "$candidate"
       return 0
@@ -556,6 +556,19 @@ aero7_find_plasma_desktop_theme() {
     done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | sort)
   done < <(aero7_plasma_desktop_theme_dirs)
   return 1
+}
+
+aero7_preseed_translucent_panel_config() {
+  local defaults_plasmashellrc
+
+  defaults_plasmashellrc="$AERO7_HOME/.config/kdedefaults/plasmashellrc"
+  aero7_user_run install -d -m 0755 "$(dirname -- "$defaults_plasmashellrc")" || true
+
+  # AeroThemePlasma creates the desktop containment first and its canonical
+  # panel second. Preseeding Panel 2 prevents the first rendered taskbar from
+  # briefly using Plasma's opaque default before first-login repair runs.
+  aero7_kwriteconfig_user --file plasmashellrc --group PlasmaViews --group "Panel 2" --key panelOpacity 2 || true
+  aero7_kwriteconfig_user --file "$defaults_plasmashellrc" --group PlasmaViews --group "Panel 2" --key panelOpacity 2 || true
 }
 
 aero7_preseed_kdedefaults_theme_config() {
@@ -645,6 +658,7 @@ aero7_preseed_atp_user_config() {
     aero7_kwriteconfig_user --file ksplashrc --group KSplash --key Theme "$lookandfeel" || true
   fi
   aero7_preseed_kdedefaults_theme_config "$color_scheme" "$lookandfeel" "$icon_theme" "$desktop_theme"
+  aero7_preseed_translucent_panel_config
   aero7_kwriteconfig_user --file kscreenlockerrc --group Daemon --key LockGrace 0 || true
   aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key Image "file:///usr/share/aero7/branding/aero7-login-background.jpg" || true
   aero7_kwriteconfig_user --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key PreviewImage "file:///usr/share/aero7/branding/aero7-login-background.jpg" || true

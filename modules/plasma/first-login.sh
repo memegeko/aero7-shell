@@ -64,7 +64,7 @@ fi
 if config_true Theme; then
   lookandfeel="$(read_config Theme LookAndFeel)"
   color_scheme="$(read_config Theme ColorScheme Aero7Light)"
-  desktop_theme="$(read_config Theme DesktopTheme breeze-light)"
+  desktop_theme="$(read_config Theme DesktopTheme Aero7)"
   kvantum_theme="$(read_config Theme KvantumTheme Windows7Aero)"
   cursor_theme="$(read_config Theme CursorTheme aero-drop)"
 
@@ -139,6 +139,21 @@ aeroPanel.location = "bottom";
 aeroPanel.height = 40;
 aeroPanel.floating = false;
 ' || true
+
+  # Panel IDs can differ on multi-screen and upgraded profiles. Set every
+  # realized panel view to the translucent mode after the canonical panel has
+  # been selected, while keeping Panel 2 as the new-profile fallback.
+  if command -v kwriteconfig6 >/dev/null 2>&1; then
+    panel_groups=""
+    if [[ -f "$config_home/plasmashellrc" ]]; then
+      panel_groups="$(sed -n 's/^\[PlasmaViews\]\[\(Panel [0-9][0-9]*\)\]$/\1/p' "$config_home/plasmashellrc")"
+    fi
+    [[ -n "$panel_groups" ]] || panel_groups="Panel 2"
+    while IFS= read -r panel_group; do
+      [[ -n "$panel_group" ]] || continue
+      kwriteconfig6 --file plasmashellrc --group PlasmaViews --group "$panel_group" --key panelOpacity 2
+    done <<<"$panel_groups"
+  fi
 fi
 
 apply_plasma_script() {
