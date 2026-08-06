@@ -42,5 +42,9 @@ else
   aero7_warn "yay is unavailable or current user is root; skipping AUR update."
 fi
 
+aero7_info "Refreshing Aero7 application names and shortcuts"
+aero7_install_application_branding || \
+  aero7_warn "Application branding could not be refreshed during this update."
+
 aero7_apps_status >/dev/null
 aero7_doctor || true

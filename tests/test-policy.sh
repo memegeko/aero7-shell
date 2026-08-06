@@ -409,6 +409,7 @@ grep -Fq 'Name=Calculator' "$repo/lib/applications.sh" || fail "KCalc branding i
 grep -Fq 'Name=Notepad' "$repo/lib/applications.sh" || fail "FeatherPad branding is not named Notepad"
 grep -Fq 'org.kde.plasma.emojier.desktop' "$repo/lib/applications.sh" || fail "Emoji Selector is not hidden by application branding"
 grep -Fq 'kbuildsycoca6 --noincremental' "$repo/lib/applications.sh" || fail "application branding does not refresh the KDE service cache"
+grep -Fq 'aero7_install_application_branding' "$repo/update.sh" || fail "Aero7 updates do not refresh application branding"
 
 (
   export AERO7_DRY_RUN=0
