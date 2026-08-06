@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Several assertions intentionally run in subshells to test fatal guard helpers
-# without terminating this test process.
-# shellcheck disable=SC1091,SC2030,SC2031,SC2317
+# without terminating this test process. Fixture callbacks and recipe variables
+# are also consumed indirectly by the sourced stage code.
+# shellcheck disable=SC1091,SC2030,SC2031,SC2034,SC2317,SC2329
 set -Eeuo pipefail
 
 repo="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
