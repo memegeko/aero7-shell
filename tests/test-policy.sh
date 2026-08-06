@@ -402,7 +402,9 @@ grep -Fq 'Keywords=terminal;cmd;command;command prompt;shell;console;qterminal;'
 grep -Fq 'Name=Media Player' "$repo/lib/applications.sh" || fail "VLC branding is not named Media Player"
 grep -Fq 'Name=Snipping Tool' "$repo/lib/applications.sh" || fail "Spectacle branding is not named Snipping Tool"
 grep -Fq 'Exec=/usr/bin/spectacle -r -b -c' "$repo/lib/applications.sh" || fail "Snipping Tool does not use region-background-clipboard mode"
-grep -Fq 'X-KDE-Shortcuts=Print,Meta+Shift+S' "$repo/lib/applications.sh" || fail "Snipping Tool shortcuts are incomplete"
+grep -Fq 'X-KDE-Shortcuts=Meta+Shift+S' "$repo/lib/applications.sh" || fail "Snipping Tool Meta+Shift+S shortcut is missing"
+grep -Fq 'X-KDE-Shortcuts=Print' "$repo/lib/applications.sh" || fail "Snipping Tool Print shortcut is missing"
+grep -Fq 'aero7-snipping-tool-print.desktop' "$repo/lib/applications.sh" || fail "Snipping Tool Print shortcut service is missing"
 grep -Fq 'Name=Calculator' "$repo/lib/applications.sh" || fail "KCalc branding is not named Calculator"
 grep -Fq 'Name=Notepad' "$repo/lib/applications.sh" || fail "FeatherPad branding is not named Notepad"
 grep -Fq 'org.kde.plasma.emojier.desktop' "$repo/lib/applications.sh" || fail "Emoji Selector is not hidden by application branding"
@@ -419,6 +421,7 @@ grep -Fq 'kbuildsycoca6 --noincremental' "$repo/lib/applications.sh" || fail "ap
   aero7_install_application_branding
   for branded_entry in \
     qterminal.desktop vlc.desktop org.kde.spectacle.desktop \
+    aero7-snipping-tool-print.desktop \
     org.kde.kcalc.desktop featherpad.desktop; do
     desktop_file_validate="$AERO7_HOME/.local/share/applications/$branded_entry"
     [[ -f "$desktop_file_validate" ]] || fail "missing branded desktop entry: $branded_entry"

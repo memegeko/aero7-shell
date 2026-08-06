@@ -277,7 +277,29 @@ Categories=Qt;KDE;Utility;
 Keywords=snapshot;capture;print;screenshot;snipping;snipping tool;snip;spectacle;
 StartupNotify=false
 Terminal=false
-X-KDE-Shortcuts=Print,Meta+Shift+S
+X-KDE-Shortcuts=Meta+Shift+S
+EOF
+  chmod 0644 "$tmp"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
+
+  # KGlobalAccel accepts one launcher shortcut per desktop service. Keep the
+  # visible Snipping Tool entry on Meta+Shift+S and use a hidden second service
+  # for Print Screen so both keys execute the same region-to-clipboard command.
+  desktop_file="$applications_dir/aero7-snipping-tool-print.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Snipping Tool (Print Screen)
+Exec=/usr/bin/spectacle -r -b -c
+TryExec=/usr/bin/spectacle
+Icon=spectacle
+NoDisplay=true
+X-KDE-Shortcuts=Print
+StartupNotify=false
+Terminal=false
 EOF
   chmod 0644 "$tmp"
   aero7_user_run install -m 0644 "$tmp" "$desktop_file"
@@ -360,6 +382,10 @@ EOF
       --key TerminalApplication qterminal
     aero7_user_run kwriteconfig6 --file kdeglobals --group General \
       --key TerminalService qterminal.desktop
+    aero7_user_run kwriteconfig6 --file kglobalshortcutsrc --group services \
+      --group org.kde.spectacle.desktop --key _launch 'Meta+Shift+S'
+    aero7_user_run kwriteconfig6 --file kglobalshortcutsrc --group services \
+      --group aero7-snipping-tool-print.desktop --key _launch Print
   fi
 
   if aero7_have kbuildsycoca6; then
