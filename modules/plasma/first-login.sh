@@ -90,13 +90,14 @@ if config_true Theme; then
   fi
 
   if command -v kwriteconfig6 >/dev/null 2>&1; then
+    install -d -m 0755 "${XDG_CONFIG_HOME:-$HOME/.config}/Kvantum"
     [[ -n "$lookandfeel" ]] && kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage "$lookandfeel"
     kwriteconfig6 --file kdeglobals --group General --key ColorScheme "$color_scheme"
     kwriteconfig6 --file kdeglobals --group General --key AccentColor "0,0,0,0"
     kwriteconfig6 --file kdeglobals --group General --key accentColorFromWallpaper --type bool false
     kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle kvantum
     kwriteconfig6 --file plasmarc --group Theme --key name "$desktop_theme"
-    kwriteconfig6 --file kvantum.kvconfig --group General --key theme "$kvantum_theme"
+    kwriteconfig6 --file Kvantum/kvantum.kvconfig --group General --key theme "$kvantum_theme"
     kwriteconfig6 --file kcminputrc --group Mouse --key cursorTheme "$cursor_theme"
     kwriteconfig6 --file kcminputrc --group Mouse --key cursorSize 32
   fi

@@ -650,7 +650,8 @@ aero7_preseed_atp_user_config() {
   aero7_kwriteconfig_user --file kcminputrc --group Mouse --key cursorSize 32 || true
 
   if [[ -n "$kvantum_theme" ]]; then
-    aero7_kwriteconfig_user --file kvantum.kvconfig --group General --key theme "$kvantum_theme" || true
+    aero7_user_run install -d -m 0755 "$AERO7_HOME/.config/Kvantum" || true
+    aero7_kwriteconfig_user --file Kvantum/kvantum.kvconfig --group General --key theme "$kvantum_theme" || true
   else
     aero7_warn "No Aero Kvantum theme was found to preseed."
   fi
