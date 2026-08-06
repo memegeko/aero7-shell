@@ -9,6 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install desktop entry validator
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes desktop-file-utils
       - name: Bash syntax
         run: |
           find . -type f \( -name '*.sh' -o -path './commands/*' -o -name 'install.sh' -o -name 'bootstrap.sh' -o -name 'update.sh' -o -name 'uninstall.sh' \) -print0 |
