@@ -218,7 +218,9 @@ aero7_install_application_branding() {
 
   local applications_dir desktop_file tmp
   applications_dir="$AERO7_HOME/.local/share/applications"
-  desktop_file="$applications_dir/org.kde.konsole.desktop"
+  aero7_user_run install -d -m 0755 "$applications_dir"
+
+  desktop_file="$applications_dir/qterminal.desktop"
   tmp="$(mktemp)" || return 1
   cat >"$tmp" <<'EOF'
 [Desktop Entry]
@@ -226,17 +228,116 @@ Type=Application
 Name=Command Prompt
 GenericName=Terminal
 Comment=Use the command line
-Exec=konsole
-Icon=terminal
+Exec=qterminal
+TryExec=qterminal
+Icon=bash
 Categories=Qt;KDE;System;TerminalEmulator;
+Keywords=terminal;cmd;command;command prompt;shell;console;qterminal;
 StartupNotify=true
 Terminal=false
-X-DBUS-StartupType=Unique
-X-DBUS-ServiceName=org.kde.konsole
-StartupWMClass=konsole
 EOF
   chmod 0644 "$tmp"
-  aero7_user_run install -d -m 0755 "$applications_dir"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
+
+  desktop_file="$applications_dir/vlc.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Media Player
+GenericName=Media Player
+Comment=Play audio and video
+Exec=/usr/bin/vlc --started-from-file %U
+TryExec=/usr/bin/vlc
+Icon=audio-player
+Categories=AudioVideo;Player;
+Keywords=media;player;audio;video;music;movie;vlc;
+StartupNotify=true
+Terminal=false
+EOF
+  chmod 0644 "$tmp"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
+
+  desktop_file="$applications_dir/org.kde.spectacle.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Snipping Tool
+GenericName=Screenshot Capture Utility
+Comment=Capture a region of the screen
+Exec=/usr/bin/spectacle -r -b -c
+TryExec=/usr/bin/spectacle
+Icon=spectacle
+Categories=Qt;KDE;Utility;
+Keywords=snapshot;capture;print;screenshot;snipping;snipping tool;snip;spectacle;
+StartupNotify=false
+Terminal=false
+X-KDE-Shortcuts=Print,Meta+Shift+S
+EOF
+  chmod 0644 "$tmp"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
+
+  desktop_file="$applications_dir/org.kde.kcalc.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Calculator
+GenericName=Calculator
+Comment=Perform calculations
+Exec=kcalc
+TryExec=kcalc
+Icon=accessories-calculator
+Categories=Qt;KDE;Utility;
+Keywords=calculator;calculation;math;kcalc;
+StartupNotify=true
+Terminal=false
+EOF
+  chmod 0644 "$tmp"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
+
+  desktop_file="$applications_dir/featherpad.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Notepad
+GenericName=Text Editor
+Comment=Create and edit plain text files
+Exec=featherpad %F
+TryExec=featherpad
+Icon=accessories-text-editor
+Categories=Qt;Utility;TextEditor;
+Keywords=notepad;text;editor;plain text;featherpad;
+StartupNotify=true
+Terminal=false
+EOF
+  chmod 0644 "$tmp"
+  aero7_user_run install -m 0644 "$tmp" "$desktop_file"
+  rm -f -- "$tmp"
+  aero7_state_append "modified_user_files" "$desktop_file"
+
+  # Plasma ships Emoji Selector as part of the desktop package, so it cannot
+  # be uninstalled independently. A user-local desktop override removes it
+  # from application search and also drops its default global shortcuts.
+  desktop_file="$applications_dir/org.kde.plasma.emojier.desktop"
+  tmp="$(mktemp)" || return 1
+  cat >"$tmp" <<'EOF'
+[Desktop Entry]
+Type=Application
+Hidden=true
+NoDisplay=true
+EOF
+  chmod 0644 "$tmp"
   aero7_user_run install -m 0644 "$tmp" "$desktop_file"
   rm -f -- "$tmp"
   aero7_state_append "modified_user_files" "$desktop_file"
@@ -253,6 +354,13 @@ EOF
   aero7_user_run install -m 0644 "$tmp" "$desktop_file"
   rm -f -- "$tmp"
   aero7_state_append "modified_user_files" "$desktop_file"
+
+  if aero7_have kwriteconfig6; then
+    aero7_user_run kwriteconfig6 --file kdeglobals --group General \
+      --key TerminalApplication qterminal
+    aero7_user_run kwriteconfig6 --file kdeglobals --group General \
+      --key TerminalService qterminal.desktop
+  fi
 
   if aero7_have kbuildsycoca6; then
     aero7_user_run kbuildsycoca6 --noincremental >/dev/null 2>&1 || true

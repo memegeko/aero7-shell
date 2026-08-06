@@ -396,8 +396,38 @@ for branded_background in background default-background bgtexture.jpg preview.pn
     fail "SDDM $branded_background did not receive the Aero7 Welcome background"
 done
 
-grep -Fq 'Name=Command Prompt' "$repo/lib/applications.sh" || fail "Konsole branding is not named Command Prompt"
+grep -Fq 'Name=Command Prompt' "$repo/lib/applications.sh" || fail "QTerminal branding is not named Command Prompt"
+grep -Fq 'Exec=qterminal' "$repo/lib/applications.sh" || fail "Command Prompt does not launch QTerminal"
+grep -Fq 'Keywords=terminal;cmd;command;command prompt;shell;console;qterminal;' "$repo/lib/applications.sh" || fail "Command Prompt search aliases are incomplete"
+grep -Fq 'Name=Media Player' "$repo/lib/applications.sh" || fail "VLC branding is not named Media Player"
+grep -Fq 'Name=Snipping Tool' "$repo/lib/applications.sh" || fail "Spectacle branding is not named Snipping Tool"
+grep -Fq 'Exec=/usr/bin/spectacle -r -b -c' "$repo/lib/applications.sh" || fail "Snipping Tool does not use region-background-clipboard mode"
+grep -Fq 'X-KDE-Shortcuts=Print,Meta+Shift+S' "$repo/lib/applications.sh" || fail "Snipping Tool shortcuts are incomplete"
+grep -Fq 'Name=Calculator' "$repo/lib/applications.sh" || fail "KCalc branding is not named Calculator"
+grep -Fq 'Name=Notepad' "$repo/lib/applications.sh" || fail "FeatherPad branding is not named Notepad"
+grep -Fq 'org.kde.plasma.emojier.desktop' "$repo/lib/applications.sh" || fail "Emoji Selector is not hidden by application branding"
 grep -Fq 'kbuildsycoca6 --noincremental' "$repo/lib/applications.sh" || fail "application branding does not refresh the KDE service cache"
+
+(
+  export AERO7_DRY_RUN=0
+  export AERO7_HOME="$tmp/application-branding-home"
+  export AERO7_STATE_ROOT_OVERRIDE="$tmp/application-branding-state"
+  aero7_state_init
+  aero7_user_run() {
+    HOME="$AERO7_HOME" XDG_CONFIG_HOME="$AERO7_HOME/.config" "$@"
+  }
+  aero7_install_application_branding
+  for branded_entry in \
+    qterminal.desktop vlc.desktop org.kde.spectacle.desktop \
+    org.kde.kcalc.desktop featherpad.desktop; do
+    desktop_file_validate="$AERO7_HOME/.local/share/applications/$branded_entry"
+    [[ -f "$desktop_file_validate" ]] || fail "missing branded desktop entry: $branded_entry"
+    desktop-file-validate "$desktop_file_validate" || fail "invalid branded desktop entry: $branded_entry"
+  done
+  grep -Fq 'Hidden=true' \
+    "$AERO7_HOME/.local/share/applications/org.kde.plasma.emojier.desktop" || \
+    fail "Emoji Selector override is not hidden"
+)
 grep -Fq 'new Panel("io.gitgud.wackyideas.panel")' "$repo/lib/plasma.sh" || fail "staged layout does not create the Aero taskbar"
 grep -Fq 'candidate.remove();' "$repo/lib/plasma.sh" || fail "staged layout does not remove duplicate panels"
 if sed -n '/aero7_apply_plasma_layout()/,/^}/p' "$repo/lib/plasma.sh" | grep -Fq 'org.kde.plasma.icontasks'; then
