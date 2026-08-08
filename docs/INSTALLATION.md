@@ -2,16 +2,16 @@
 
 Use a VM first. Aero7-shell is intended for a fresh minimal Arch Linux installation with a normal non-root user that has sudo access.
 
-One-line install from the current GitHub `main` branch:
+One-line install from the current GitHub `beta` branch:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/main/bootstrap.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh)"
 ```
 
 Safer inspect-first flow:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/memegeko/aero7-shell/main/bootstrap.sh
+curl -fsSLO https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh
 less bootstrap.sh
 bash bootstrap.sh
 ```
@@ -19,10 +19,10 @@ bash bootstrap.sh
 Pinned release install after a GitHub Release is published:
 
 ```bash
-AERO7_VERSION=v0.1.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/main/bootstrap.sh)"
+AERO7_VERSION=v0.1.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh)"
 ```
 
-The main-branch installer is convenient for alpha testing. Pinned release mode downloads the release archive and verifies `checksums.txt`.
+The beta-branch installer is convenient for testing. Pinned release mode downloads the release archive and verifies `checksums.txt`.
 
 Useful installer options:
 

@@ -8,11 +8,11 @@ fail() {
   exit 1
 }
 
-main_output="$(AERO7_BOOTSTRAP_PRINT_URLS=1 bash "$repo/bootstrap.sh")"
-[[ "$main_output" == *"repository=memegeko/aero7-shell"* ]] || fail "default repository is wrong"
-[[ "$main_output" == *"ref=main"* ]] || fail "default ref is not main"
-[[ "$main_output" == *"archive_url=https://codeload.github.com/memegeko/aero7-shell/tar.gz/refs/heads/main"* ]] || fail "main archive URL is wrong"
-[[ "$main_output" == *"checksum_required=0"* ]] || fail "main branch should not require release checksum by default"
+beta_output="$(AERO7_BOOTSTRAP_PRINT_URLS=1 bash "$repo/bootstrap.sh")"
+[[ "$beta_output" == *"repository=memegeko/aero7-shell"* ]] || fail "default repository is wrong"
+[[ "$beta_output" == *"ref=beta"* ]] || fail "default ref is not beta"
+[[ "$beta_output" == *"archive_url=https://codeload.github.com/memegeko/aero7-shell/tar.gz/refs/heads/beta"* ]] || fail "beta archive URL is wrong"
+[[ "$beta_output" == *"checksum_required=0"* ]] || fail "beta branch should not require release checksum by default"
 
 release_output="$(AERO7_BOOTSTRAP_PRINT_URLS=1 AERO7_VERSION=v0.1.0 bash "$repo/bootstrap.sh")"
 [[ "$release_output" == *"archive_url=https://github.com/memegeko/aero7-shell/releases/download/v0.1.0/aero7-shell-v0.1.0.tar.gz"* ]] || fail "release archive URL is wrong"

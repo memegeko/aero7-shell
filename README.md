@@ -50,10 +50,10 @@ applications, a custom wallpaper, Plymouth, SDDM, Fastfetch, and Wine integratio
 
 ## Installation
 
-Install the current `main` branch on a fresh Arch Linux system with one command:
+Install the current `beta` branch on a fresh Arch Linux system with one command:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/main/bootstrap.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh)"
 ```
 
 > [!IMPORTANT]
@@ -63,7 +63,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/mai
 Prefer to inspect the installer before running it?
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/memegeko/aero7-shell/main/bootstrap.sh
+curl -fsSLO https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh
 less bootstrap.sh
 bash bootstrap.sh
 ```
@@ -71,7 +71,7 @@ bash bootstrap.sh
 For a pinned GitHub release after one is published:
 
 ```bash
-AERO7_VERSION=v0.1.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/main/bootstrap.sh)"
+AERO7_VERSION=v0.1.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh)"
 ```
 
 See the [installation guide](docs/INSTALLATION.md) for installer flags, binary
