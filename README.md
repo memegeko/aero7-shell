@@ -85,17 +85,18 @@ package controls, source-build fallback, resume options, and local development.
   <img src="docs/screenshots/desktop.png" alt="Aero7-shell desktop running in a VM" width="900">
 </p>
 
-| Start menu | Compact taskbar grouping |
+| Start menu | All Programs |
 | --- | --- |
-| <img src="docs/screenshots/start_menu.png" alt="Aero7-shell Start menu" width="420"> | <img src="docs/screenshots/seventasks_compact.png" alt="Aero7-shell compact taskbar grouping" width="420"> |
+| <img src="docs/screenshots/start-menu.png" alt="Aero7-shell Start menu" width="420"> | <img src="docs/screenshots/all-programs.png" alt="Aero7-shell alphabetical All Programs list" width="420"> |
 
-| Authentication prompt | Notification |
+| Authentication prompt | Desktop context menu |
 | --- | --- |
-| <img src="docs/screenshots/uac.png" alt="Aero7-shell authentication prompt" width="420"> | <img src="docs/screenshots/notification.png" alt="Aero7-shell notification popup" width="420"> |
+| <img src="docs/screenshots/authentication.png" alt="Aero7-shell authentication prompt" width="420"> | <img src="docs/screenshots/context-menu.png" alt="Aero7-shell light desktop context menu" width="420"> |
 
 These images come from a VM test build. Open the
 [complete screenshot gallery](docs/SCREENSHOTS.md) to see the lock screen,
-jump lists, gadgets, network details, mixer, clock, and other desktop elements.
+jump lists, gadgets, network and volume controls, applications, and other
+desktop elements.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
