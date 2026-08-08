@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-message=$'Aero7-shell\nWindows 7 Ultimate-inspired desktop\nRunning on Arch Linux\n\nAero7-shell is an independent project and is not affiliated with or endorsed by Microsoft Corporation.\nWindows is a trademark of the Microsoft group of companies.'
+message=$'Aero7\nClassic Aero desktop\nRunning on Arch Linux\n\nAero7 is an independent, free and open-source project.'
 
 if command -v linver >/dev/null 2>&1; then
   exec linver
