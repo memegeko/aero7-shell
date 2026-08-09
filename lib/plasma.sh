@@ -615,7 +615,7 @@ aero7_preseed_atp_user_config() {
   kvantum_theme="$(aero7_find_kvantum_theme || true)"
   desktop_theme="$(aero7_find_plasma_desktop_theme || true)"
 
-  aero7_kwriteconfig_user --file kdeglobals --group Sounds --key Theme "Windows 7" || return 0
+  aero7_kwriteconfig_user --file kdeglobals --group Sounds --key Theme "Aero7" || return 0
   aero7_kwriteconfig_user --file kdeglobals --group General --key AccentColor "0,0,0,0" || true
   aero7_kwriteconfig_user --file kdeglobals --group General --key accentColorFromWallpaper --type bool false || true
   if [[ -n "$color_scheme" ]]; then

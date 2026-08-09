@@ -215,6 +215,7 @@ grep -Fq 'ForegroundNormal=0,0,0' <<<"$scheme_text" || fail "Aero7 light color s
   aero7_have() { [[ "$1" == "kwriteconfig6" ]]; }
   aero7_user_run() { printf '%s\n' "$*" >>"$write_log"; }
   aero7_apply_plasma_theme >/dev/null
+  grep -Fq -- '--file kdeglobals --group Sounds --key Theme Aero7' "$write_log" || fail "Plasma preseed did not select the Aero7 sound theme"
   grep -Fq -- '--file kdeglobals --group KDE --key LookAndFeelPackage authui7' "$write_log" || fail "Plasma preseed did not pin the Aero global theme"
   grep -Fq -- '--file kdeglobals --group General --key ColorScheme Aero7Light' "$write_log" || fail "Plasma preseed did not pin the Aero7 light color scheme"
   grep -Fq -- '--file kdeglobals --group Colors:Complementary --key BackgroundNormal 240,240,240' "$write_log" || fail "Plasma preseed did not force the complementary background light"
