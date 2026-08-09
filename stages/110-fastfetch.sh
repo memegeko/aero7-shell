@@ -9,6 +9,7 @@ stage_run() {
 
   local user_config_dir="$AERO7_HOME/.config/fastfetch"
   local aero_config="$user_config_dir/aero7.jsonc"
+  local aero_logo="$user_config_dir/aero7-logo.txt"
   local default_config="$user_config_dir/config.jsonc"
 
   if aero7_dry_run; then
@@ -18,7 +19,9 @@ stage_run() {
 
   aero7_user_run install -d -m 0755 "$user_config_dir"
   aero7_user_run install -m 0644 "$AERO7_ROOT/assets/fastfetch/aero7.jsonc" "$aero_config"
+  aero7_user_run install -m 0644 "$AERO7_ROOT/assets/fastfetch/aero7-logo.txt" "$aero_logo"
   aero7_state_append "modified_user_files" "$aero_config"
+  aero7_state_append "modified_user_files" "$aero_logo"
   if [[ ! -e "$default_config" ]]; then
     aero7_user_run ln -s "aero7.jsonc" "$default_config"
     aero7_state_append "modified_user_files" "$default_config"
@@ -28,7 +31,10 @@ stage_run() {
 }
 
 stage_validate() {
-  [[ "${AERO7_DRY_RUN:-0}" == "1" ]] || [[ -f "$AERO7_HOME/.config/fastfetch/aero7.jsonc" ]]
+  [[ "${AERO7_DRY_RUN:-0}" == "1" ]] || {
+    [[ -f "$AERO7_HOME/.config/fastfetch/aero7.jsonc" ]]
+    [[ -f "$AERO7_HOME/.config/fastfetch/aero7-logo.txt" ]]
+  }
 }
 
 stage_rollback() {

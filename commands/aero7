@@ -265,6 +265,7 @@ aero7_fastfetch_cmd() {
       local dir="$AERO7_HOME/.config/fastfetch"
       aero7_user_run install -d -m 0755 "$dir"
       aero7_user_run install -m 0644 "$AERO7_PROJECT_ROOT/assets/fastfetch/aero7.jsonc" "$dir/aero7.jsonc"
+      aero7_user_run install -m 0644 "$AERO7_PROJECT_ROOT/assets/fastfetch/aero7-logo.txt" "$dir/aero7-logo.txt"
       if [[ ! -e "$dir/config.jsonc" ]]; then
         aero7_user_run ln -s "aero7.jsonc" "$dir/config.jsonc"
       else

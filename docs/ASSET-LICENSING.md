@@ -6,6 +6,7 @@ Only assets listed here may be distributed by Aero7-shell.
 | --- | --- | --- | --- | --- | --- |
 | `assets/avatars/aero7-user.png` | Aero7-shell contributors | Original Aero7-shell project artwork generated from an original geometric design | MIT | Yes | Preserve repository licence notice |
 | `assets/fastfetch/aero7.jsonc` | Aero7-shell contributors | Original Aero7-shell Fastfetch configuration | MIT | Yes | Preserve repository licence notice |
+| `assets/fastfetch/aero7-logo.txt` | Aero7-shell contributors | Original colored Aero7 Fastfetch wordmark | MIT | Yes | Preserve repository licence notice |
 | `assets/wallpapers/aero7-background.png` | Aero7 project owner | Project-owner-supplied composition of the original Aero7 blue background and standalone 7 emblem, supplied on 2026-08-03 | Project-owner-approved artwork | Yes | Preserve this provenance entry |
 | `docs/assets/aero7-logo.png` | Aero7 project owner | Circular AI-generated Aero7 7 emblem supplied on 2026-08-03; background isolated with OpenAI's image editor and removed with a chroma-key pass | Project-owner-approved copyright-free artwork | Yes | Preserve this provenance entry |
 
