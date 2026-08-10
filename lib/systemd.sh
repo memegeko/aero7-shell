@@ -28,6 +28,7 @@ aero7_enable_core_services() {
   if aero7_have systemctl || aero7_dry_run; then
     aero7_systemctl_enable NetworkManager.service
     aero7_systemctl_enable sddm.service
+    aero7_systemctl_enable ufw.service
   else
     aero7_warn "systemctl is unavailable; cannot enable services."
     return 1
@@ -44,7 +45,7 @@ aero7_validate_core_services() {
     return 1
   fi
 
-  for unit in NetworkManager.service sddm.service; do
+  for unit in NetworkManager.service sddm.service ufw.service; do
     if ! aero7_systemd_unit_exists "$unit"; then
       aero7_warn "Required systemd unit is missing despite saved state: $unit"
       failed=1
