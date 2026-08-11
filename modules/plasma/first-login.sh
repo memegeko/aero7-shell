@@ -95,6 +95,8 @@ if config_true Theme; then
     kwriteconfig6 --file kdeglobals --group General --key ColorScheme "$color_scheme"
     kwriteconfig6 --file kdeglobals --group General --key AccentColor "0,0,0,0"
     kwriteconfig6 --file kdeglobals --group General --key accentColorFromWallpaper --type bool false
+    kwriteconfig6 --file kwalletrc --group Wallet --key Enabled --type bool false
+    kwriteconfig6 --file kwalletrc --group Wallet --key "First Use" --type bool false
     kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle kvantum
     kwriteconfig6 --file plasmarc --group Theme --key name "$desktop_theme"
     kwriteconfig6 --file Kvantum/kvantum.kvconfig --group General --key theme "$kvantum_theme"

@@ -616,6 +616,11 @@ aero7_preseed_atp_user_config() {
   desktop_theme="$(aero7_find_plasma_desktop_theme || true)"
 
   aero7_kwriteconfig_user --file kdeglobals --group Sounds --key Theme "Aero7" || return 0
+  # Keep KWallet disabled for Aero7 accounts. Some KDE frameworks depend on
+  # the wallet libraries, so removing the package is neither reliable nor
+  # necessary; these user settings prevent the service and first-use wizard.
+  aero7_kwriteconfig_user --file kwalletrc --group Wallet --key Enabled --type bool false || true
+  aero7_kwriteconfig_user --file kwalletrc --group Wallet --key "First Use" --type bool false || true
   aero7_kwriteconfig_user --file kdeglobals --group General --key AccentColor "0,0,0,0" || true
   aero7_kwriteconfig_user --file kdeglobals --group General --key accentColorFromWallpaper --type bool false || true
   if [[ -n "$color_scheme" ]]; then

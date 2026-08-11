@@ -216,6 +216,8 @@ grep -Fq 'ForegroundNormal=0,0,0' <<<"$scheme_text" || fail "Aero7 light color s
   aero7_user_run() { printf '%s\n' "$*" >>"$write_log"; }
   aero7_apply_plasma_theme >/dev/null
   grep -Fq -- '--file kdeglobals --group Sounds --key Theme Aero7' "$write_log" || fail "Plasma preseed did not select the Aero7 sound theme"
+  grep -Fq -- '--file kwalletrc --group Wallet --key Enabled --type bool false' "$write_log" || fail "Plasma preseed did not disable KWallet"
+  grep -Fq -- '--file kwalletrc --group Wallet --key First Use --type bool false' "$write_log" || fail "Plasma preseed did not suppress the KWallet first-use wizard"
   grep -Fq -- '--file kdeglobals --group KDE --key LookAndFeelPackage authui7' "$write_log" || fail "Plasma preseed did not pin the Aero global theme"
   grep -Fq -- '--file kdeglobals --group General --key ColorScheme Aero7Light' "$write_log" || fail "Plasma preseed did not pin the Aero7 light color scheme"
   grep -Fq -- '--file kdeglobals --group Colors:Complementary --key BackgroundNormal 240,240,240' "$write_log" || fail "Plasma preseed did not force the complementary background light"
@@ -364,6 +366,8 @@ EOF
   grep -Fq 'plasma-apply-desktoptheme Aero7' "$first_login_calls" || fail "deferred Plasma helper did not apply the Aero7 desktop theme"
   grep -Fq 'kvantummanager --set Windows7Aero' "$first_login_calls" || fail "deferred Plasma helper did not apply the Aero widget theme"
   grep -Fq 'kwriteconfig6 --file Kvantum/kvantum.kvconfig --group General --key theme Windows7Aero' "$first_login_calls" || fail "deferred Plasma helper did not persist the standard Kvantum config path"
+  grep -Fq 'kwriteconfig6 --file kwalletrc --group Wallet --key Enabled --type bool false' "$first_login_calls" || fail "deferred Plasma helper did not keep KWallet disabled"
+  grep -Fq 'kwriteconfig6 --file kwalletrc --group Wallet --key First Use --type bool false' "$first_login_calls" || fail "deferred Plasma helper did not suppress KWallet first use"
   grep -Fq 'io.gitgud.wackyideas.panel' "$first_login_calls" || fail "deferred Plasma helper did not repair duplicate panels"
   grep -Fq 'kwriteconfig6 --file plasmashellrc --group PlasmaViews --group Panel 2 --key panelOpacity 2' "$first_login_calls" || fail "deferred Plasma helper did not make Panel 2 translucent"
   grep -Fq 'kwriteconfig6 --file plasmashellrc --group PlasmaViews --group Panel 8 --key panelOpacity 2' "$first_login_calls" || fail "deferred Plasma helper did not make every realized panel translucent"
