@@ -4,7 +4,7 @@ set -Eeuo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "$repo_root"
 
-version="${AERO7_VERSION:-0.1.0}"
+version="${AERO7_VERSION:-v1.0.0}"
 prefix="aero7-shell-${version}"
 dist_dir="$repo_root/dist"
 archive="$dist_dir/${prefix}.tar.gz"

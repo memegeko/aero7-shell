@@ -117,7 +117,7 @@ def format_duration(seconds: float) -> str:
 
 @dataclass
 class InstallerState:
-    version: str = "0.1.0"
+    version: str = "1.0.0"
     log_path: str = ""
     stages_total: int = 16
     current_stage_id: str = ""
@@ -246,7 +246,7 @@ class Aero7Frontend:
     def demo_events(self, mode: str) -> None:
         speed = 0.1 if os.environ.get("AERO7_TEST_FAST") == "1" else 1.0
         total = len(STAGE_TITLES)
-        self.enqueue({"type": "session_start", "version": "0.1.0-alpha", "stages": total, "log": "/tmp/aero7-demo.log"})
+        self.enqueue({"type": "session_start", "version": "1.0.0", "stages": total, "log": "/tmp/aero7-demo.log"})
         if mode == "small-terminal":
             self.enqueue({"type": "action_start", "title": "Terminal is too small for comfortable setup"})
             time.sleep(2 * speed)

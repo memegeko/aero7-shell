@@ -176,7 +176,7 @@ aero7_tui_sudo_screen() {
   fi
 
   left=" Aero7-shell Setup"
-  right="${AERO7_VERSION:-0.1.0} "
+  right="${AERO7_VERSION:-1.0.0} "
   gap=$((cols - ${#left} - ${#right}))
   [[ "$gap" -lt 1 ]] && gap=1
 

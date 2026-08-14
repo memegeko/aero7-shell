@@ -21,8 +21,7 @@ applications, a custom wallpaper, Plymouth, SDDM, Fastfetch, and Wine integratio
 [Install](#installation) ·
 [Screenshots](#screenshots) ·
 [Documentation](#documentation) ·
-[Report a bug](https://github.com/memegeko/aero7-shell/issues/new?template=bug_report.yml) ·
-[Request a feature](https://github.com/memegeko/aero7-shell/issues/new)
+[Report a bug](https://github.com/memegeko/aero7-shell/issues/new?template=bug_report.yml)
 
 </div>
 
@@ -40,6 +39,7 @@ applications, a custom wallpaper, Plymouth, SDDM, Fastfetch, and Wine integratio
 - [Supported environment](#supported-environment)
 - [Managing Aero7-shell](#managing-aero7-shell)
 - [Project status](#project-status)
+- [Maintenance policy](#maintenance-policy)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [Security](#security)
@@ -50,28 +50,23 @@ applications, a custom wallpaper, Plymouth, SDDM, Fastfetch, and Wine integratio
 
 ## Installation
 
-Install the current `beta` branch on a fresh Arch Linux system with one command:
+Install the checksum-verified Aero7-shell 1.0 release on a fresh Arch Linux
+system with one command:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh)"
+AERO7_VERSION=v1.0.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/release/bootstrap.sh)"
 ```
 
 > [!IMPORTANT]
-> Aero7-shell is currently alpha software. Test it in a VM first and keep a
-> backup before using it on a personal system.
+> Aero7-shell changes desktop, login, initramfs, and boot configuration. Use a
+> fresh supported installation and keep a current backup of personal data.
 
 Prefer to inspect the installer before running it?
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh
+curl -fsSLO https://raw.githubusercontent.com/memegeko/aero7-shell/release/bootstrap.sh
 less bootstrap.sh
-bash bootstrap.sh
-```
-
-For a pinned GitHub release after one is published:
-
-```bash
-AERO7_VERSION=v0.1.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh)"
+AERO7_VERSION=v1.0.0 bash bootstrap.sh
 ```
 
 See the [installation guide](docs/INSTALLATION.md) for installer flags, binary
@@ -82,7 +77,7 @@ package controls, source-build fallback, resume options, and local development.
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/desktop.png" alt="Aero7-shell desktop running in a VM" width="900">
+  <img src="docs/screenshots/desktop.png" alt="Aero7-shell desktop" width="900">
 </p>
 
 | Start menu | All Programs |
@@ -93,10 +88,9 @@ package controls, source-build fallback, resume options, and local development.
 | --- | --- |
 | <img src="docs/screenshots/authentication.png" alt="Aero7-shell authentication prompt" width="420"> | <img src="docs/screenshots/context-menu.png" alt="Aero7-shell light desktop context menu" width="420"> |
 
-These images come from a VM test build. Open the
-[complete screenshot gallery](docs/SCREENSHOTS.md) to see the lock screen,
-jump lists, gadgets, network and volume controls, applications, and other
-desktop elements.
+Open the [complete screenshot gallery](docs/SCREENSHOTS.md) to see the lock
+screen, jump lists, gadgets, network and volume controls, applications, and
+other desktop elements.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -104,8 +98,7 @@ desktop elements.
 
 Aero7-shell is a post-installation setup system for Arch Linux. It recreates
 the familiar layout and visual language of Windows 7 Ultimate on a modern KDE
-Plasma 6 Wayland desktop while continuing to identify the operating system
-honestly as Arch Linux.
+Plasma 6 Wayland desktop while retaining a standard Linux foundation.
 
 The installer is designed to be useful beyond the first run:
 
@@ -148,7 +141,7 @@ changes, install browser themes, or add an X11 Plasma session.
 | Desktop | KDE Plasma 6 Wayland |
 | Bootloader | GRUB or systemd-boot |
 | Initramfs | mkinitcpio or dracut |
-| Recommended test target | A clean virtual machine |
+| Hardware | x86-64 system with supported Arch Linux kernel drivers |
 
 Some Aero effects may be less complete on Wayland than on X11. See the
 [Wayland limitations](docs/WAYLAND-LIMITATIONS.md) for the current tradeoffs.
@@ -174,10 +167,10 @@ aero7 wine status
 
 ## Project status
 
-Aero7-shell is under active alpha development and is integration-tested in a
-clean Arch Linux VM. The main installation flow, desktop packages, SDDM,
-Plymouth, wallpapers, configuration backups, and management commands are
-covered by automated or VM checks.
+Aero7-shell 1.0 is the stable feature-complete shell release. The main
+installation flow, desktop packages, SDDM, Plymouth, wallpapers, configuration
+backups, and management commands are covered by automated validation and real
+hardware installation testing.
 
 Several third-party Aero application recipes remain unavailable or experimental
 until their upstream source and build instructions can be verified. The
@@ -185,28 +178,37 @@ installer reports these honestly instead of guessing how to build them.
 
 Follow the [changelog](CHANGELOG.md) for completed work and the
 [issue tracker](https://github.com/memegeko/aero7-shell/issues) for known
-problems and planned improvements.
+problems and maintenance updates.
+
+## Maintenance policy
+
+The `release` branch is the canonical stable branch. Aero7-shell is now in
+maintenance mode: future changes are limited to bug fixes, security fixes,
+compatibility updates required by Arch Linux or Plasma, and corrections to
+documentation. New desktop features belong in separate Aero7 projects rather
+than this repository.
 
 ## Documentation
 
-| Start here | Technical details | Testing and recovery |
+| Start here | Technical details | Maintenance and recovery |
 | --- | --- | --- |
 | [Installation](docs/INSTALLATION.md) | [Architecture](docs/ARCHITECTURE.md) | [Troubleshooting](docs/TROUBLESHOOTING.md) |
 | [Applications](docs/APPLICATIONS.md) | [UI architecture](docs/UI-ARCHITECTURE.md) | [Recovery](docs/RECOVERY.md) |
-| [Screenshots](docs/SCREENSHOTS.md) | [Binary packages](docs/BINARY-PACKAGES.md) | [VM testing](docs/VM-TESTING.md) |
-| [Wayland limitations](docs/WAYLAND-LIMITATIONS.md) | [Boot configuration](docs/BOOT-CONFIGURATION.md) | [First VM test](docs/FIRST-VM-TEST.md) |
-| [Asset licensing](docs/ASSET-LICENSING.md) | [Release workflow](docs/RELEASE.md) | |
+| [Screenshots](docs/SCREENSHOTS.md) | [Binary packages](docs/BINARY-PACKAGES.md) | [Release workflow](docs/RELEASE.md) |
+| [Wayland limitations](docs/WAYLAND-LIMITATIONS.md) | [Boot configuration](docs/BOOT-CONFIGURATION.md) | [Security policy](SECURITY.md) |
+| [Asset licensing](docs/ASSET-LICENSING.md) | | |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Contributing
 
-Bug reports, tested fixes, documentation improvements, and verified application
-recipes are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
-opening a pull request.
+Bug reports, tested bug fixes, security fixes, compatibility fixes, and
+documentation corrections are welcome. Feature additions are no longer
+accepted in this maintenance repository. Please read
+[CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 1. Fork the repository.
-2. Create a focused feature or fix branch.
+2. Create a focused bug-fix branch.
 3. Run the relevant test scripts and ShellCheck.
 4. Commit the change with a clear message.
 5. Open a pull request describing what was tested.
@@ -217,9 +219,8 @@ new assets must follow the rules in [Asset licensing](docs/ASSET-LICENSING.md).
 ## Security
 
 Remote shell installers can modify desktop, initramfs, and bootloader
-configuration. Inspect `bootstrap.sh`, test in a VM, and keep backups.
-Main-branch installs are intended for alpha testing; pinned release installs
-verify release archives against their published checksum.
+configuration. Inspect `bootstrap.sh` and keep backups. Pinned release installs
+verify release archives against their published SHA-256 checksum.
 
 Aero7-shell avoids browser security modifications, passwordless sudo, Secure
 Boot changes, firewall changes, and arbitrary command execution from

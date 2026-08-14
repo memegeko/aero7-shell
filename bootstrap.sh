@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 AERO7_REPOSITORY="${AERO7_REPOSITORY:-memegeko/aero7-shell}"
-AERO7_REF="${AERO7_REF:-${AERO7_BRANCH:-beta}}"
+AERO7_REF="${AERO7_REF:-${AERO7_BRANCH:-release}}"
 AERO7_VERSION="${AERO7_VERSION:-}"
 AERO7_REQUIRE_CHECKSUM="${AERO7_REQUIRE_CHECKSUM:-0}"
 AERO7_BOOTSTRAP_PRINT_URLS="${AERO7_BOOTSTRAP_PRINT_URLS:-0}"
@@ -101,7 +101,7 @@ if [[ "$checksum_required" == "1" ]]; then
   bootstrap_fetch "$checksum_url" "$checksums" || bootstrap_die "Failed to download checksum file."
   bootstrap_verify_checksum "$archive" "$checksums" || bootstrap_die "Archive checksum verification failed."
 else
-  printf 'Using development branch archive without checksum verification. Inspect bootstrap.sh first for production installs.\n' >&2
+  printf 'Using a branch archive without checksum verification. Prefer a pinned AERO7_VERSION for verified installs.\n' >&2
 fi
 
 tar -xzf "$archive" -C "$tmp_dir"

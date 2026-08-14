@@ -1,10 +1,10 @@
 # Binary Packages
 
-Aero7-shell can install the Aero desktop package set from the signed alpha
+Aero7-shell can install the Aero desktop package set from the signed stable
 pacman repository published for current Arch Linux x86_64 systems.
 
 Current status: the repository public key is present, pinned to fingerprint
-`72C79ABBBBE96446DD3324042694BFE1090F4FD6`, and the complete alpha package set
+`72C79ABBBBE96446DD3324042694BFE1090F4FD6`, and the complete package set
 is published at `https://memegeko.github.io/aero7-repo/$arch`.
 
 The default `auto` mode prefers signed binary packages when the pinned key and

@@ -12,7 +12,7 @@ Only assets listed here may be distributed by Aero7-shell.
 
 ## Documentation Screenshots
 
-Files under `docs/screenshots/` are VM screenshots for documentation only. They are not installed by Aero7-shell and must not be copied into `assets/` or used as reusable artwork.
+Files under `docs/screenshots/` are documentation screenshots only. They are not installed by Aero7-shell and must not be copied into `assets/` or used as reusable artwork.
 
 Screenshots may show third-party desktop theme components, application UI, and trademarked references for descriptive purposes. The project legal and trademark notice still applies.
 

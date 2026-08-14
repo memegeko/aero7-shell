@@ -1,28 +1,42 @@
 # Release Workflow
 
-Aero7-shell bootstrap defaults to the current GitHub `beta` branch for testing. When `AERO7_VERSION` is set, it downloads a tagged release archive and verifies it with `checksums.txt`. Do not publish or document an unverified archive as stable.
+`release` is the canonical Aero7-shell branch. Version 1.0 is feature-complete,
+so subsequent releases contain bug fixes, security fixes, required platform
+compatibility updates, and documentation corrections only.
 
-Build a release from a clean git worktree:
+When `AERO7_VERSION` is set, `bootstrap.sh` downloads a tagged release archive
+and verifies it with the release's `checksums.txt`. Do not publish or document
+an unverified archive as stable.
 
-```bash
-AERO7_VERSION=0.1.0 tools/build-release.sh
-```
+## Validation
 
-The script uses `git ls-files`, excludes generated output, writes the archive to `dist/`, and creates `dist/checksums.txt`.
-
-Publish the first release:
-
-1. Commit all release-ready files.
-2. Tag the commit, for example `git tag -a v0.1.0 -m "Aero7-shell v0.1.0 alpha"`.
-3. Run `AERO7_VERSION=v0.1.0 tools/build-release.sh`.
-4. Create a GitHub release for the tag.
-5. Upload `dist/aero7-shell-v0.1.0.tar.gz` and `dist/checksums.txt`.
-6. Test the bootstrap command in a fresh VM.
-
-Development branch testing can use:
+From a clean worktree, run the complete automated suite used by CI:
 
 ```bash
-AERO7_REF=beta bash bootstrap.sh
+find . -type f \( -name '*.sh' -o -path './commands/*' -o -name 'install.sh' -o -name 'bootstrap.sh' -o -name 'update.sh' -o -name 'uninstall.sh' \) -print0 | xargs -0 -n1 bash -n
+bash tests/test-bootstrap.sh
+bash tests/test-common.sh
+bash tests/test-detection.sh
+bash tests/test-recipes.sh
+bash tests/test-ui-events.sh
+python tests/test-ui-protocol.py
+python tests/test-ui-pty.py
+bash tests/test-ui.sh
+bash tests/test-policy.sh
+python -m py_compile ui/aero7_setup.py tools/ui-demo.py tests/test-ui-protocol.py tests/test-ui-pty.py
+find . -type f \( -name '*.sh' -o -path './commands/*' -o -name 'install.sh' -o -name 'bootstrap.sh' -o -name 'update.sh' -o -name 'uninstall.sh' \) -print0 | xargs -0 shellcheck
 ```
 
-Branch mode is for development and alpha testing. Set `AERO7_REQUIRE_CHECKSUM=1` if you also publish a matching `checksums.txt` for a branch archive.
+## Build and publish
+
+1. Commit all release-ready files on `release`.
+2. Run `AERO7_VERSION=v1.0.0 tools/build-release.sh`.
+3. Verify `dist/checksums.txt` with `sha256sum -c`.
+4. Tag the tested commit with an annotated semantic-version tag.
+5. Create a GitHub release and attach the archive plus `checksums.txt`.
+6. Verify the published assets and the pinned bootstrap URL.
+
+The builder uses `git ls-files`, excludes generated output, writes the archive
+to `dist/`, and creates `dist/checksums.txt`. Branch mode remains available for
+maintainer diagnostics with `AERO7_REF=release`, but tagged release mode is the
+recommended public installation path.

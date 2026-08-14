@@ -85,7 +85,7 @@ if [[ "$AERO7_RESTORE_BACKUP" -eq 1 ]]; then
 fi
 
 if [[ "$AERO7_KEEP_PACKAGES" -eq 0 ]]; then
-  aero7_warn "Automatic package removal is not enabled until install ownership tracking has been reviewed in a VM."
+  aero7_warn "Automatic package removal is disabled by design; only explicitly tracked Aero7 files are removed."
 fi
 
 if [[ "$AERO7_KEEP_APPS" -eq 0 ]]; then

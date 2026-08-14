@@ -1,8 +1,7 @@
 # Screenshots
 
-These screenshots were captured after a clean Aero7 installation, OOBE, and
-first-login repair in the supported QEMU/KVM profile. They document the current
-installed desktop and are not reusable runtime artwork.
+These screenshots document a clean Aero7 installation after first-login setup.
+They show the current installed desktop and are not reusable runtime artwork.
 
 ## Desktop
 

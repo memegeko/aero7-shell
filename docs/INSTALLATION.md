@@ -1,28 +1,33 @@
 # Installation
 
-Use a VM first. Aero7-shell is intended for a fresh minimal Arch Linux installation with a normal non-root user that has sudo access.
+Aero7-shell is intended for a fresh minimal Arch Linux installation with a
+normal non-root user that has sudo access. Back up personal data before
+changing desktop, login, initramfs, or boot configuration.
 
-One-line install from the current GitHub `beta` branch:
+Checksum-verified installation of the stable 1.0 release:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh)"
+AERO7_VERSION=v1.0.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/release/bootstrap.sh)"
 ```
 
 Safer inspect-first flow:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh
+curl -fsSLO https://raw.githubusercontent.com/memegeko/aero7-shell/release/bootstrap.sh
 less bootstrap.sh
-bash bootstrap.sh
+AERO7_VERSION=v1.0.0 bash bootstrap.sh
 ```
 
-Pinned release install after a GitHub Release is published:
+The canonical `release` branch can be used without a version pin when testing a
+maintenance fix before its next tagged release:
 
 ```bash
-AERO7_VERSION=v0.1.0 bash -c "$(curl -fsSL https://raw.githubusercontent.com/memegeko/aero7-shell/beta/bootstrap.sh)"
+AERO7_REF=release bash bootstrap.sh
 ```
 
-The beta-branch installer is convenient for testing. Pinned release mode downloads the release archive and verifies `checksums.txt`.
+Pinned release mode downloads the release archive and requires its published
+SHA-256 value from `checksums.txt`. Branch mode does not have release-asset
+checksum verification and is not the recommended installation path.
 
 Useful installer options:
 
@@ -45,8 +50,8 @@ Sevulet is skipped, and the installer does not reboot unless explicit options
 are added. It still pre-applies the upstream AeroThemePlasma Wayland session and marks its
 first-time setup wizard as complete after configuring the equivalent settings.
 
-The signed Aero7 package repository is alpha-only, but it is live and pinned by
-fingerprint. The default installer path prefers those signed binary packages
+The signed Aero7 package repository is live and pinned by fingerprint. The
+default installer path prefers those signed binary packages
 when available. `--binary-packages` fails closed if the signed repository is
 unavailable. `--source-build` keeps the original AUR build behavior.
 `--allow-source-fallback` is required for noninteractive runs that may fall back

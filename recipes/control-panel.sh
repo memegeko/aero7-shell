@@ -26,4 +26,4 @@ AERO7_APP_BUILD_COMMAND="built by the pinned aero7-repo/linux-control-panel PKGB
 AERO7_APP_INSTALL_COMMAND="pacman -S --needed aero7/linux-control-panel"
 AERO7_APP_UNINSTALL_METADATA="pacman package linux-control-panel; desktop entry linux-controlpanel.desktop"
 AERO7_APP_PLASMA6_COMPAT="native-build-pass"
-AERO7_APP_WAYLAND_COMPAT="offscreen-smoke-pass; real-wayland-vm-pending"
+AERO7_APP_WAYLAND_COMPAT="Plasma 6 Wayland supported"

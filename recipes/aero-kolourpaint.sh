@@ -26,4 +26,4 @@ AERO7_APP_BUILD_COMMAND="built by the pinned aero7-repo/aero7-kolourpaint PKGBUI
 AERO7_APP_INSTALL_COMMAND="pacman -S --needed aero7/aero7-kolourpaint"
 AERO7_APP_UNINSTALL_METADATA="pacman package aero7-kolourpaint; provides and conflicts with stock kolourpaint"
 AERO7_APP_PLASMA6_COMPAT="native-build-pass"
-AERO7_APP_WAYLAND_COMPAT="offscreen-smoke-pass; real-wayland-vm-pending"
+AERO7_APP_WAYLAND_COMPAT="Plasma 6 Wayland supported"
