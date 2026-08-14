@@ -154,6 +154,9 @@ grep -q '^initrd /initramfs-linux.img$' "$updated" || fail "systemd-boot entry d
 root="$tmp/root"
 mkdir -p "$root/usr/share/wayland-sessions"
 AERO7_TEST_ROOT="$root"
+AERO7_HOME="$tmp/home"
+export AERO7_HOME
+mkdir -p "$AERO7_HOME"
 if aero7_validate_plasma_wayland_session; then
   fail "missing Wayland session validated successfully"
 fi

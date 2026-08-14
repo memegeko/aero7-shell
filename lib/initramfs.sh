@@ -123,7 +123,8 @@ aero7_initramfs_config_has_plymouth() {
 }
 
 aero7_initramfs_image_contains_plymouth() {
-  local image boot_dir found=1
+  local image boot_dir uki_dir found=1
+  local -a uki_dirs=()
   boot_dir="$(aero7_root_path /boot)"
   for image in "$boot_dir"/initramfs*.img; do
     [[ -f "$image" ]] || continue
@@ -132,6 +133,36 @@ aero7_initramfs_image_contains_plymouth() {
       break
     fi
   done
+
+  # mkinitcpio can embed the initramfs in a unified kernel image instead of
+  # writing initramfs*.img. Support the conventional ESP mount locations. In a
+  # real install the ESP can be root-only, so use the already-authorized sudo
+  # session; test roots remain directly inspectable without privilege.
+  uki_dirs=(
+    "$(aero7_root_path /boot/EFI/Linux)"
+    "$(aero7_root_path /efi/EFI/Linux)"
+    "$(aero7_root_path /boot/efi/EFI/Linux)"
+  )
+  if [[ "$found" -ne 0 && -n "${AERO7_TEST_ROOT:-}" ]]; then
+    for uki_dir in "${uki_dirs[@]}"; do
+      for image in "$uki_dir"/*.efi; do
+        [[ -f "$image" ]] || continue
+        if lsinitcpio "$image" 2>/dev/null | grep -Eq '(^|/)hooks/plymouth$|(^|/)usr/bin/plymouthd$'; then
+          found=0
+          break 2
+        fi
+      done
+    done
+  elif [[ "$found" -ne 0 ]] && aero7_have sudo; then
+    while IFS= read -r image; do
+      [[ -n "$image" ]] || continue
+      if sudo -n lsinitcpio "$image" 2>/dev/null | grep -Eq '(^|/)hooks/plymouth$|(^|/)usr/bin/plymouthd$'; then
+        found=0
+        break
+      fi
+    done < <(sudo -n find /boot/EFI/Linux /efi/EFI/Linux /boot/efi/EFI/Linux \
+      -maxdepth 1 -type f -name '*.efi' -print 2>/dev/null || true)
+  fi
   return "$found"
 }
 

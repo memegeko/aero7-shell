@@ -51,6 +51,16 @@ cp "$entry_updated" "$tmp/systemd/boot/loader/entries/arch.conf"
 AERO7_TEST_ROOT="$tmp/systemd"
 aero7_bootloader_config_has_kernel_params quiet splash || fail "systemd-boot helper did not detect Plymouth boot params"
 
+mkdir -p "$tmp/uki/etc/kernel" "$tmp/uki/boot/loader/entries"
+cp "$repo/tests/fixtures/loader.conf" "$tmp/uki/boot/loader/loader.conf"
+printf 'root=PARTUUID=test rw\n' >"$tmp/uki/etc/kernel/cmdline"
+uki_updated="$tmp/uki-updated"
+aero7_update_kernel_cmdline_file "$tmp/uki/etc/kernel/cmdline" "$uki_updated" quiet splash
+grep -Fxq 'root=PARTUUID=test rw quiet splash' "$uki_updated" || fail "UKI kernel parameter merge failed"
+cp "$uki_updated" "$tmp/uki/etc/kernel/cmdline"
+AERO7_TEST_ROOT="$tmp/uki"
+aero7_bootloader_config_has_kernel_params quiet splash || fail "UKI helper did not detect Plymouth boot params"
+
 updated_hooks="$(aero7_mkinitcpio_hooks_with_plymouth 'HOOKS=(base udev autodetect microcode modconf block filesystems fsck)')"
 [[ "$updated_hooks" == 'HOOKS=(base udev autodetect microcode modconf kms plymouth block filesystems fsck)' ]] || fail "mkinitcpio hook insertion failed: $updated_hooks"
 
@@ -60,6 +70,21 @@ AERO7_TEST_ROOT="$tmp/mk"
 [[ "$(aero7_detect_initramfs)" == "mkinitcpio" ]] || fail "mkinitcpio detection failed"
 aero7_update_mkinitcpio_file "$repo/tests/fixtures/mkinitcpio.conf" "$tmp/mk/etc/mkinitcpio.conf"
 aero7_initramfs_config_has_plymouth || fail "mkinitcpio helper did not detect Plymouth hook"
+
+mkdir -p "$tmp/bin" "$tmp/mk/boot"
+# shellcheck disable=SC2016 # Preserve $1 for the generated test executable.
+printf '#!/usr/bin/env bash\ncat -- "$1"\n' >"$tmp/bin/lsinitcpio"
+chmod +x "$tmp/bin/lsinitcpio"
+original_path="$PATH"
+PATH="$tmp/bin:$PATH"
+printf 'usr/bin/plymouthd\n' >"$tmp/mk/boot/initramfs-linux.img"
+aero7_initramfs_image_contains_plymouth || fail "initramfs helper did not detect Plymouth in a regular image"
+
+mkdir -p "$tmp/uki-image/efi/EFI/Linux"
+printf 'hooks/plymouth\n' >"$tmp/uki-image/efi/EFI/Linux/aero7.efi"
+AERO7_TEST_ROOT="$tmp/uki-image"
+aero7_initramfs_image_contains_plymouth || fail "initramfs helper did not detect Plymouth in a UKI on /efi"
+PATH="$original_path"
 
 mkdir -p "$tmp/dr/etc/dracut.conf.d"
 cp "$repo/tests/fixtures/dracut.conf" "$tmp/dr/etc/dracut.conf"

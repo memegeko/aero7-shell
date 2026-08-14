@@ -17,6 +17,20 @@ aero7_detect_bootloader() {
   [[ -f "$(aero7_root_path /etc/default/grub)" || -f "$(aero7_root_path /boot/grub/grub.cfg)" ]] && grub=1
   [[ -f "$(aero7_root_path /boot/loader/loader.conf)" && -d "$(aero7_root_path /boot/loader/entries)" ]] && systemd_boot=1
 
+  # A systemd-boot installation using unified kernel images may have no Type #1
+  # loader entries.  The ESP can also deliberately be inaccessible to regular
+  # users, while the firmware LoaderInfo variable remains readable.
+  if [[ -z "${AERO7_TEST_ROOT:-}" ]]; then
+    local loader_info
+    for loader_info in /sys/firmware/efi/efivars/LoaderInfo-*; do
+      [[ -r "$loader_info" ]] || continue
+      if tr -d '\000' <"$loader_info" 2>/dev/null | grep -Fqi 'systemd-boot'; then
+        systemd_boot=1
+        break
+      fi
+    done
+  fi
+
   if [[ "$grub" -eq 1 && "$systemd_boot" -eq 1 ]]; then
     printf 'ambiguous\n'
   elif [[ "$grub" -eq 1 ]]; then
@@ -26,6 +40,21 @@ aero7_detect_bootloader() {
   else
     printf 'unsupported\n'
   fi
+}
+
+aero7_update_kernel_cmdline_file() {
+  local input="$1"
+  local output="$2"
+  shift 2
+  local value
+  value="$(tr '\n' ' ' <"$input")"
+  printf '%s\n' "$(aero7_merge_kernel_params "$value" "$@")" >"$output"
+}
+
+aero7_validate_kernel_cmdline_file() {
+  local file="$1"
+  [[ -s "$file" ]] || return 1
+  [[ "$(wc -l <"$file")" -eq 1 ]]
 }
 
 aero7_merge_kernel_params() {
@@ -116,7 +145,12 @@ aero7_grub_config_has_kernel_params() {
 }
 
 aero7_systemd_boot_config_has_kernel_params() {
-  local entry entries_dir param_line
+  local entry entries_dir param_line kernel_cmdline
+  kernel_cmdline="$(aero7_root_path /etc/kernel/cmdline)"
+  if [[ -f "$kernel_cmdline" ]]; then
+    param_line="$(tr '\n' ' ' <"$kernel_cmdline")"
+    aero7_line_has_kernel_params "$param_line" "$@" && return 0
+  fi
   entries_dir="$(aero7_root_path /boot/loader/entries)"
   for entry in "$entries_dir"/*.conf; do
     [[ -f "$entry" ]] || continue
@@ -171,10 +205,19 @@ aero7_configure_bootloader_for_plymouth() {
     systemd-boot)
       aero7_info "Detected systemd-boot."
       if aero7_dry_run; then
-        aero7_info "Would merge quiet splash into normal systemd-boot entries."
+        aero7_info "Would merge quiet splash into the systemd-boot kernel command line."
         return 0
       fi
       local entry tmp_entry
+      if [[ -f /etc/kernel/cmdline ]]; then
+        tmp_entry="$(mktemp)"
+        trap 'rm -f -- "$tmp_entry"' RETURN
+        aero7_update_kernel_cmdline_file /etc/kernel/cmdline "$tmp_entry" quiet splash
+        aero7_replace_file_safely /etc/kernel/cmdline "$tmp_entry" "systemd-boot" "aero7_validate_kernel_cmdline_file"
+        rm -f -- "$tmp_entry"
+        trap - RETURN
+        return 0
+      fi
       for entry in /boot/loader/entries/*.conf; do
         [[ -f "$entry" ]] || continue
         case "$(basename -- "$entry")" in

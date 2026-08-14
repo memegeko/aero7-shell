@@ -5,6 +5,8 @@ assets/wallpapers/*
 assets/avatars/*.bmp
 
 # Generated and runtime files.
+__pycache__/
+*.py[cod]
 .aero7-test-root/
 *.log
 test-results/
